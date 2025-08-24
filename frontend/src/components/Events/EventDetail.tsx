@@ -34,12 +34,6 @@ export const EventDetail: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
-  useEffect(() => {
-    if (id) {
-      loadEventAndTasks();
-    }
-  }, [id, loadEventAndTasks]);
-
   const loadEventAndTasks = useCallback(async () => {
     try {
       const [eventData, tasksData] = await Promise.all([
@@ -55,6 +49,12 @@ export const EventDetail: React.FC = () => {
       setLoading(false);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      loadEventAndTasks();
+    }
+  }, [id, loadEventAndTasks]);
 
   const handleTaskToggle = async (taskId: string, completed: boolean) => {
     try {

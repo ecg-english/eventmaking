@@ -36,12 +36,6 @@ export const EventForm: React.FC<EventFormProps> = ({ isEdit = false }) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
-  useEffect(() => {
-    if (isEdit && id) {
-      loadEvent();
-    }
-  }, [isEdit, id, loadEvent]);
-
   const loadEvent = useCallback(async () => {
     try {
       const event = await apiService.getEvent(id!);
@@ -58,6 +52,12 @@ export const EventForm: React.FC<EventFormProps> = ({ isEdit = false }) => {
       setLoadingData(false);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (isEdit && id) {
+      loadEvent();
+    }
+  }, [isEdit, id, loadEvent]);
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({
