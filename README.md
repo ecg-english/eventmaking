@@ -70,4 +70,37 @@ npm run dev
 ### 環境変数
 - `REACT_APP_API_URL`: GASバックエンドのURL
 - `JWT_SECRET`: GASのスクリプトプロパティで設定
-- `CORS_ORIGIN`: GASのスクリプトプロパティで設定 
+- `CORS_ORIGIN`: GASのスクリプトプロパティで設定
+
+## 🚀 今すぐ始める（GASバックエンド設定）
+
+### 1. GASプロジェクトの作成
+1. [Google Apps Script](https://script.google.com/) にアクセス
+2. 新しいプロジェクトを作成
+3. プロジェクト名を「EventManagementBackend」に設定
+
+### 2. ファイルの追加
+以下の4つのファイルをGASエディタに追加：
+- `Code.gs` (メインエントリーポイント)
+- `AuthService.gs` (認証サービス)
+- `EventService.gs` (イベント管理サービス)
+- `DatabaseService.gs` (データベースサービス)
+
+### 3. スクリプトプロパティの設定
+1. プロジェクト設定 → スクリプトプロパティ
+2. 以下のプロパティを追加：
+   - `JWT_SECRET`: `eventmaking-secret-key-2024-a1b2c3d4e5f6g7h8i9j0`
+   - `CORS_ORIGIN`: `https://eventmaking-1asxnmi4y-nauticalimiles-projects.vercel.app`
+
+### 4. デプロイ
+1. 「デプロイ」→「新しいデプロイ」
+2. 種類：「ウェブアプリ」
+3. アクセス権：「全員」
+4. デプロイ実行
+
+### 5. Vercel環境変数の設定
+1. Vercelダッシュボード → プロジェクト設定
+2. 環境変数に以下を追加：
+   - `REACT_APP_API_URL`: `https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec/api`
+
+詳細な手順は [gas-deploy.md](./gas-deploy.md) を参照してください。 
