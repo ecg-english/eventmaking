@@ -13,9 +13,10 @@
 ## 技術スタック
 
 - **フロントエンド**: React, TypeScript, Material-UI
-- **バックエンド**: Node.js, Express, TypeScript
-- **データベース**: SQLite (開発用)
+- **バックエンド**: Google Apps Script (GAS)
+- **データベース**: Google Sheets
 - **認証**: JWT
+- **デプロイ**: Vercel (フロントエンド) + GAS (バックエンド)
 
 ## セットアップ
 
@@ -35,12 +36,17 @@ npm run dev
 
 ### 本番デプロイ
 
-詳細なデプロイ手順は [deploy.md](./deploy.md) を参照してください。
+詳細なデプロイ手順は [gas-deploy.md](./gas-deploy.md) を参照してください。
 
 #### 推奨デプロイ方法
-- **フロントエンド**: Vercel
-- **バックエンド**: Railway
-- **データベース**: Railway PostgreSQL
+- **フロントエンド**: Vercel (自動デプロイ)
+- **バックエンド**: Google Apps Script
+- **データベース**: Google Sheets
+
+## アクセスURL
+
+- **本番環境**: https://eventmaking-1asxnmi4y-nauticalimiles-projects.vercel.app
+- **GitHub**: https://github.com/ecg-english/eventmaking
 
 ## イベント作成フロー
 
@@ -53,4 +59,15 @@ npm run dev
 7. Meetup投稿（一週間前）
 8. ストーリー投稿（一週間前）
 9. ストーリー再投稿（前日）
-10. 実施・反省会（当日） 
+10. 実施・反省会（当日）
+
+## 開発者向け情報
+
+### 自動デプロイ
+- GitHubのmainブランチにプッシュすると自動的にVercelにデプロイされます
+- GASバックエンドは手動でデプロイが必要です
+
+### 環境変数
+- `REACT_APP_API_URL`: GASバックエンドのURL
+- `JWT_SECRET`: GASのスクリプトプロパティで設定
+- `CORS_ORIGIN`: GASのスクリプトプロパティで設定 
