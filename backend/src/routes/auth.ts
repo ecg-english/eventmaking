@@ -1,6 +1,7 @@
 import express from 'express';
 import { UserService } from '../services/userService';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
+import { UserWithoutPassword } from '../types';
 
 const router = express.Router();
 const userService = new UserService();
@@ -19,9 +20,9 @@ router.post('/register', async (req, res) => {
     }
     
     const user = await userService.createUser(email, name, password);
-    const { user: sanitizedUser, token } = await userService.authenticateUser(email, password);
+    const { token } = await userService.authenticateUser(email, password);
     
-    res.status(201).json({ user: sanitizedUser, token });
+    res.status(201).json({ user, token });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
@@ -47,7 +48,7 @@ router.post('/login', async (req, res) => {
 router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
     const user = await userService.getUserById(req.userId!);
-    const { password, ...sanitizedUser } = user;
+    const sanitizedUser = userService.sanitizeUser(user);
     res.json(sanitizedUser);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -59,8 +60,7 @@ router.put('/me', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
     const { name, email } = req.body;
     const user = await userService.updateUser(req.userId!, { name, email });
-    const { password, ...sanitizedUser } = user;
-    res.json(sanitizedUser);
+    res.json(user);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }

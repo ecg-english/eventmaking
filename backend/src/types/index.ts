@@ -43,6 +43,13 @@ export interface User {
   createdAt: string;
 }
 
+export interface UserWithoutPassword {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+}
+
 export interface EventProposal {
   id: string;
   eventId: string;

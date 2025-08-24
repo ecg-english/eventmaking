@@ -2,14 +2,14 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { database } from '../database/connection';
-import { User } from '../types';
+import { User, UserWithoutPassword } from '../types';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const SALT_ROUNDS = 10;
 
 export class UserService {
   
-  async createUser(email: string, name: string, password: string): Promise<User> {
+  async createUser(email: string, name: string, password: string): Promise<UserWithoutPassword> {
     // メールアドレスの重複チェック
     const existingUser = await this.getUserByEmail(email);
     if (existingUser) {
@@ -27,10 +27,10 @@ export class UserService {
     
     await database.run(sql, [id, email, name, hashedPassword, now]);
     
-    return this.getUserById(id);
+    return this.sanitizeUser(await this.getUserById(id));
   }
 
-  async authenticateUser(email: string, password: string): Promise<{ user: User; token: string }> {
+  async authenticateUser(email: string, password: string): Promise<{ user: UserWithoutPassword; token: string }> {
     const user = await this.getUserByEmail(email);
     if (!user) {
       throw new Error('メールアドレスまたはパスワードが正しくありません');
@@ -64,7 +64,7 @@ export class UserService {
     return row ? this.mapDbRowToUser(row) : null;
   }
 
-  async updateUser(id: string, updates: { name?: string; email?: string }): Promise<User> {
+  async updateUser(id: string, updates: { name?: string; email?: string }): Promise<UserWithoutPassword> {
     const updateFields = [];
     const values = [];
     
@@ -83,14 +83,14 @@ export class UserService {
     }
     
     if (updateFields.length === 0) {
-      return this.getUserById(id);
+      return this.sanitizeUser(await this.getUserById(id));
     }
     
     values.push(id);
     const sql = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
     await database.run(sql, values);
     
-    return this.getUserById(id);
+    return this.sanitizeUser(await this.getUserById(id));
   }
 
   async changePassword(id: string, currentPassword: string, newPassword: string): Promise<void> {
@@ -129,7 +129,7 @@ export class UserService {
     };
   }
 
-  private sanitizeUser(user: User): Omit<User, 'password'> {
+  public sanitizeUser(user: User): UserWithoutPassword {
     const { password, ...sanitizedUser } = user;
     return sanitizedUser;
   }
