@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -12,13 +12,11 @@ import {
   Checkbox,
   FormControlLabel,
   LinearProgress,
-  Divider,
   Alert
 } from '@mui/material';
 import {
   Edit as EditIcon,
   ArrowBack as ArrowBackIcon,
-  CheckCircle as CheckCircleIcon,
   Schedule as ScheduleIcon,
   Warning as WarningIcon
 } from '@mui/icons-material';
@@ -40,9 +38,9 @@ export const EventDetail: React.FC = () => {
     if (id) {
       loadEventAndTasks();
     }
-  }, [id]);
+  }, [id, loadEventAndTasks]);
 
-  const loadEventAndTasks = async () => {
+  const loadEventAndTasks = useCallback(async () => {
     try {
       const [eventData, tasksData] = await Promise.all([
         apiService.getEvent(id!),
@@ -56,7 +54,7 @@ export const EventDetail: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   const handleTaskToggle = async (taskId: string, completed: boolean) => {
     try {

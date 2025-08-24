@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Paper,
@@ -40,9 +40,9 @@ export const EventForm: React.FC<EventFormProps> = ({ isEdit = false }) => {
     if (isEdit && id) {
       loadEvent();
     }
-  }, [isEdit, id]);
+  }, [isEdit, id, loadEvent]);
 
-  const loadEvent = async () => {
+  const loadEvent = useCallback(async () => {
     try {
       const event = await apiService.getEvent(id!);
       setFormData({
@@ -57,7 +57,7 @@ export const EventForm: React.FC<EventFormProps> = ({ isEdit = false }) => {
     } finally {
       setLoadingData(false);
     }
-  };
+  }, [id]);
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({

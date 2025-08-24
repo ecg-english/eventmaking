@@ -11,7 +11,6 @@ import {
   Avatar
 } from '@mui/material';
 import {
-  AccountCircle,
   Event as EventIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
