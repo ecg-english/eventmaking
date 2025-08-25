@@ -2,8 +2,8 @@
 // メインエントリーポイント
 
 // 環境変数
-const JWT_SECRET = PropertiesService.getScriptProperties().getProperty('JWT_SECRET') || 'your-secret-key-here';
-const CORS_ORIGIN = PropertiesService.getScriptProperties().getProperty('CORS_ORIGIN') || '*';
+const JWT_SECRET = PropertiesService.getScriptProperties().getProperty('JWT_SECRET') || 'eventmaking-secret-key-2024-a1b2c3d4e5f6g7h8i9j0';
+const CORS_ORIGIN = PropertiesService.getScriptProperties().getProperty('CORS_ORIGIN') || 'https://ecg-english.github.io';
 
 /**
  * GET リクエストのハンドラー

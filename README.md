@@ -16,7 +16,8 @@
 - **バックエンド**: Google Apps Script (GAS)
 - **データベース**: Google Sheets
 - **認証**: JWT
-- **デプロイ**: Vercel (フロントエンド) + GAS (バックエンド)
+- **デプロイ**: GitHub Pages (フロントエンド) + GAS (バックエンド)
+- **総コスト**: ¥0
 
 ## セットアップ
 
@@ -39,13 +40,14 @@ npm run dev
 詳細なデプロイ手順は [gas-deploy.md](./gas-deploy.md) を参照してください。
 
 #### 推奨デプロイ方法
-- **フロントエンド**: Vercel (自動デプロイ)
-- **バックエンド**: Google Apps Script
-- **データベース**: Google Sheets
+- **フロントエンド**: GitHub Pages (完全無料)
+- **バックエンド**: Google Apps Script (完全無料)
+- **データベース**: Google Sheets (完全無料)
 
 ## アクセスURL
 
-- **本番環境**: https://eventmaking-1asxnmi4y-nauticalimiles-projects.vercel.app
+- **フロントエンド**: https://ecg-english.github.io/eventmaking
+- **バックエンド**: https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec
 - **GitHub**: https://github.com/ecg-english/eventmaking
 
 ## イベント作成フロー
@@ -64,7 +66,7 @@ npm run dev
 ## 開発者向け情報
 
 ### 自動デプロイ
-- GitHubのmainブランチにプッシュすると自動的にVercelにデプロイされます
+- GitHubのmainブランチにプッシュすると自動的にGitHub Pagesにデプロイされます
 - GASバックエンドは手動でデプロイが必要です
 
 ### 環境変数
@@ -90,7 +92,7 @@ npm run dev
 1. プロジェクト設定 → スクリプトプロパティ
 2. 以下のプロパティを追加：
    - `JWT_SECRET`: `eventmaking-secret-key-2024-a1b2c3d4e5f6g7h8i9j0`
-   - `CORS_ORIGIN`: `https://eventmaking-1asxnmi4y-nauticalimiles-projects.vercel.app`
+   - `CORS_ORIGIN`: `https://ecg-english.github.io`
 
 ### 4. デプロイ
 1. 「デプロイ」→「新しいデプロイ」
@@ -98,9 +100,8 @@ npm run dev
 3. アクセス権：「全員」
 4. デプロイ実行
 
-### 5. Vercel環境変数の設定
-1. Vercelダッシュボード → プロジェクト設定
-2. 環境変数に以下を追加：
-   - `REACT_APP_API_URL`: `https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec/api`
+### 5. フロントエンドの設定
+1. ローカル開発用: `.env.local`ファイルを作成
+2. 本番環境用: ビルド時にAPI URLを設定
 
-詳細な手順は [gas-deploy.md](./gas-deploy.md) を参照してください。 
+詳細な手順は [github-pages-deploy.md](./github-pages-deploy.md) を参照してください。 

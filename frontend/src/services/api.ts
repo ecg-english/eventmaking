@@ -10,10 +10,10 @@ import {
   CreateTaskData 
 } from '../types';
 
-// 本番環境では環境変数から、開発環境ではデフォルト値を使用
-const API_BASE_URL = process.env.REACT_APP_API_URL || 
-  (process.env.NODE_ENV === 'production' 
-    ? 'https://your-backend-url.herokuapp.com/api'
+// 本番環境ではGASのURL、開発環境ではローカルサーバーを使用
+const API_BASE_URL = process.env.REACT_APP_API_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? 'https://script.google.com/macros/s/YOUR_GAS_SCRIPT_ID/exec/api'
     : 'http://localhost:5001/api'
   );
 
