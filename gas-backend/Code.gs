@@ -48,9 +48,15 @@ function handleRequest(e, method) {
 
     // OPTIONSリクエスト（プリフライト）の処理
     if (method === 'OPTIONS') {
-      return ContentService.createTextOutput('')
-        .setMimeType(ContentService.MimeType.TEXT)
-        .setHeaders(headers);
+      const response = ContentService.createTextOutput('')
+        .setMimeType(ContentService.MimeType.TEXT);
+      
+      response.addHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
+      response.addHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      response.addHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      response.addHeader('Content-Type', 'application/json');
+      
+      return response;
     }
 
     const path = e.parameter.path || '';
@@ -77,23 +83,30 @@ function handleRequest(e, method) {
       };
     }
 
-    return ContentService.createTextOutput(JSON.stringify(response))
-      .setMimeType(ContentService.MimeType.JSON)
-      .setHeaders(headers);
+    const responseOutput = ContentService.createTextOutput(JSON.stringify(response))
+      .setMimeType(ContentService.MimeType.JSON);
+    
+    responseOutput.addHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
+    responseOutput.addHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    responseOutput.addHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    responseOutput.addHeader('Content-Type', 'application/json');
+    
+    return responseOutput;
 
   } catch (error) {
     console.error('Error handling request:', error);
-    return ContentService.createTextOutput(JSON.stringify({ 
+    const response = ContentService.createTextOutput(JSON.stringify({ 
       error: 'サーバー内部エラーが発生しました',
       details: error.toString()
     }))
-      .setMimeType(ContentService.MimeType.JSON)
-      .setHeaders({
-        'Access-Control-Allow-Origin': CORS_ORIGIN,
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Content-Type': 'application/json'
-      });
+      .setMimeType(ContentService.MimeType.JSON);
+    
+    response.addHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
+    response.addHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.addHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    response.addHeader('Content-Type', 'application/json');
+    
+    return response;
   }
 }
 
