@@ -53,15 +53,11 @@ function handleRequest(e, method) {
 
     // OPTIONSリクエスト（プリフライト）の処理
     if (method === 'OPTIONS') {
-      const response = ContentService.createTextOutput('')
-        .setMimeType(ContentService.MimeType.TEXT);
-      
-      response.addHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
-      response.addHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      response.addHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-      response.addHeader('Content-Type', 'application/json');
-      
-      return response;
+      return ContentService.createTextOutput('')
+        .setMimeType(ContentService.MimeType.TEXT)
+        .setHeader('Access-Control-Allow-Origin', CORS_ORIGIN)
+        .setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     }
 
     const path = e.parameter.path || '';
@@ -88,30 +84,22 @@ function handleRequest(e, method) {
       };
     }
 
-    const responseOutput = ContentService.createTextOutput(JSON.stringify(response))
-      .setMimeType(ContentService.MimeType.JSON);
-    
-    responseOutput.addHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
-    responseOutput.addHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    responseOutput.addHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    responseOutput.addHeader('Content-Type', 'application/json');
-    
-    return responseOutput;
+    return ContentService.createTextOutput(JSON.stringify(response))
+      .setMimeType(ContentService.MimeType.JSON)
+      .setHeader('Access-Control-Allow-Origin', CORS_ORIGIN)
+      .setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+      .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   } catch (error) {
     console.error('Error handling request:', error);
-    const response = ContentService.createTextOutput(JSON.stringify({ 
+    return ContentService.createTextOutput(JSON.stringify({ 
       error: 'サーバー内部エラーが発生しました',
       details: error.toString()
     }))
-      .setMimeType(ContentService.MimeType.JSON);
-    
-    response.addHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
-    response.addHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.addHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    response.addHeader('Content-Type', 'application/json');
-    
-    return response;
+      .setMimeType(ContentService.MimeType.JSON)
+      .setHeader('Access-Control-Allow-Origin', CORS_ORIGIN)
+      .setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+      .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   }
 }
 
