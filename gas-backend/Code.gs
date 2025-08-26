@@ -41,11 +41,7 @@ function handleRequest(e, method) {
     // OPTIONSリクエスト（プリフライト）の処理
     if (method === 'OPTIONS') {
       return ContentService.createTextOutput('')
-        .setMimeType(ContentService.MimeType.TEXT)
-        .setHeader('Access-Control-Allow-Origin', '*')
-        .setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-        .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-        .setHeader('Access-Control-Max-Age', '86400');
+        .setMimeType(ContentService.MimeType.TEXT);
     }
 
     const path = e.parameter.path || '';
@@ -70,10 +66,7 @@ function handleRequest(e, method) {
     }
 
     return ContentService.createTextOutput(JSON.stringify(response))
-      .setMimeType(ContentService.MimeType.JSON)
-      .setHeader('Access-Control-Allow-Origin', '*')
-      .setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-      .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      .setMimeType(ContentService.MimeType.JSON);
 
   } catch (error) {
     console.error('Error handling request:', error);
@@ -81,10 +74,7 @@ function handleRequest(e, method) {
       error: 'サーバー内部エラーが発生しました',
       details: error.toString()
     }))
-      .setMimeType(ContentService.MimeType.JSON)
-      .setHeader('Access-Control-Allow-Origin', '*')
-      .setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-      .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
