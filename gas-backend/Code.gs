@@ -38,6 +38,11 @@ function doDelete(e) {
  */
 function handleRequest(e, method) {
   try {
+    // デバッグ用ログ
+    console.log('CORS_ORIGIN:', CORS_ORIGIN);
+    console.log('Request method:', method);
+    console.log('Request headers:', e.headers);
+    
     // CORSヘッダーを設定
     const headers = {
       'Access-Control-Allow-Origin': CORS_ORIGIN,
@@ -193,6 +198,9 @@ function testAPI() {
   // ヘルスチェック
   const healthResponse = doGet({ parameter: { path: 'health' } });
   console.log('Health check:', healthResponse.getContent());
+  
+  // CORS設定テスト
+  console.log('CORS_ORIGIN value:', CORS_ORIGIN);
   
   // ユーザー登録テスト
   const registerData = {
