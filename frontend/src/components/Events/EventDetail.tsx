@@ -59,9 +59,18 @@ export const EventDetail: React.FC = () => {
   const handleTaskToggle = async (taskId: string, completed: boolean) => {
     try {
       const updatedTask = await apiService.updateTask(taskId, { completed });
-      setTasks(tasks.map(task => 
-        task.id === taskId ? updatedTask : task
-      ));
+      
+      // 元のタスク情報を保持しながら更新
+      setTasks(tasks.map(task => {
+        if (task.id === taskId) {
+          return {
+            ...task,  // 元のタスク情報を保持
+            ...updatedTask,  // 更新された情報で上書き
+            completed: completed  // 完了状態を確実に更新
+          };
+        }
+        return task;
+      }));
     } catch (error) {
       console.error('Failed to update task:', error);
       alert('タスクの更新に失敗しました');
@@ -250,9 +259,11 @@ export const EventDetail: React.FC = () => {
                   <Grid item xs={12} key={task.id}>
                     <Card 
                       sx={{ 
-                        opacity: task.completed ? 0.7 : 1,
+                        opacity: task.completed ? 0.6 : 1,
                         border: urgency.type === 'overdue' ? '2px solid #f44336' : 
-                               urgency.type === 'urgent' ? '2px solid #ff9800' : 'none'
+                               urgency.type === 'urgent' ? '2px solid #ff9800' : 'none',
+                        backgroundColor: task.completed ? '#f5f5f5' : 'white',
+                        transition: 'all 0.3s ease'
                       }}
                     >
                       <CardContent>
@@ -275,7 +286,9 @@ export const EventDetail: React.FC = () => {
                                 variant="h6" 
                                 sx={{ 
                                   textDecoration: task.completed ? 'line-through' : 'none',
-                                  flex: 1 
+                                  flex: 1,
+                                  color: task.completed ? 'text.secondary' : 'text.primary',
+                                  fontWeight: task.completed ? 'normal' : 'medium'
                                 }}
                               >
                                 {task.title}
@@ -285,42 +298,64 @@ export const EventDetail: React.FC = () => {
                                 label={TASK_TYPE_LABELS[task.taskType]}
                                 size="small"
                                 variant="outlined"
+                                sx={{ 
+                                  opacity: task.completed ? 0.7 : 1,
+                                  backgroundColor: task.completed ? 'rgba(0,0,0,0.04)' : 'transparent'
+                                }}
                               />
                               
                               <Chip
                                 label={PRIORITY_LABELS[task.priority]}
                                 size="small"
                                 color={getPriorityColor(task.priority)}
+                                sx={{ 
+                                  opacity: task.completed ? 0.7 : 1,
+                                  backgroundColor: task.completed ? 'rgba(0,0,0,0.04)' : undefined
+                                }}
                               />
                             </Box>
                             
                             {task.description && (
-                              <Typography variant="body2" color="text.secondary" paragraph>
+                              <Typography 
+                                variant="body2" 
+                                color="text.secondary" 
+                                paragraph
+                                sx={{
+                                  textDecoration: task.completed ? 'line-through' : 'none',
+                                  opacity: task.completed ? 0.7 : 1
+                                }}
+                              >
                                 {task.description}
                               </Typography>
                             )}
                             
                             <Box display="flex" alignItems="center" gap={1}>
-                              {urgency.type === 'overdue' && (
+                              {urgency.type === 'overdue' && !task.completed && (
                                 <WarningIcon color="error" fontSize="small" />
                               )}
-                              {urgency.type === 'urgent' && (
+                              {urgency.type === 'urgent' && !task.completed && (
                                 <WarningIcon color="warning" fontSize="small" />
                               )}
                               
                               <Typography 
                                 variant="body2" 
                                 color={
+                                  task.completed ? 'text.secondary' :
                                   urgency.type === 'overdue' ? 'error' :
                                   urgency.type === 'urgent' ? 'warning.main' :
                                   'text.secondary'
                                 }
+                                sx={{
+                                  textDecoration: task.completed ? 'line-through' : 'none',
+                                  opacity: task.completed ? 0.7 : 1
+                                }}
                               >
                                 期限: {task.dueDate ? format(parseISO(task.dueDate), 'MM月dd日 HH:mm', { locale: ja }) : '未設定'}
-                                {urgency.type === 'overdue' && ` (${urgency.days}日過ぎています)`}
-                                {urgency.type === 'urgent' && urgency.days === 0 && ' (今日が期限)'} 
-                                {urgency.type === 'urgent' && urgency.days === 1 && ' (明日が期限)'}
-                                {urgency.type === 'upcoming' && ` (あと${urgency.days}日)`}
+                                {!task.completed && urgency.type === 'overdue' && ` (${urgency.days}日過ぎています)`}
+                                {!task.completed && urgency.type === 'urgent' && urgency.days === 0 && ' (今日が期限)'} 
+                                {!task.completed && urgency.type === 'urgent' && urgency.days === 1 && ' (明日が期限)'}
+                                {!task.completed && urgency.type === 'upcoming' && ` (あと${urgency.days}日)`}
+                                {task.completed && ' (完了)'}
                               </Typography>
                             </Box>
                           </Box>
