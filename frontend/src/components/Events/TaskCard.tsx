@@ -11,7 +11,9 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  TextField
+  TextField,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -43,6 +45,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 }) => {
   const [notes, setNotes] = useState(task.notes || '');
   const [isNotesExpanded, setIsNotesExpanded] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleSaveNotes = () => {
     onUpdateNotes(task.id, notes);
@@ -74,55 +78,76 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         transition: 'all 0.3s ease'
       }}
     >
-      <CardContent>
-        <Box display="flex" alignItems="flex-start" gap={2}>
+      <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+        <Box display="flex" alignItems="flex-start" gap={isMobile ? 1 : 2}>
           <FormControlLabel
             control={
               <Checkbox
                 checked={task.completed}
                 onChange={(e) => onToggle(task.id, e.target.checked)}
                 color="primary"
+                size={isMobile ? "small" : "medium"}
               />
             }
             label=""
-            sx={{ m: 0 }}
+            sx={{ m: 0, minWidth: 'auto' }}
           />
           
-          <Box flex={1}>
-            <Box display="flex" alignItems="center" gap={1} mb={1}>
+          <Box flex={1} minWidth={0}>
+            {/* タスクタイトルとチップ */}
+            <Box 
+              display="flex" 
+              flexDirection={isMobile ? "column" : "row"}
+              alignItems={isMobile ? "flex-start" : "center"} 
+              gap={1} 
+              mb={1}
+            >
               <Typography 
-                variant="h6" 
+                variant={isMobile ? "subtitle1" : "h6"} 
                 sx={{ 
                   textDecoration: task.completed ? 'line-through' : 'none',
                   flex: 1,
                   color: task.completed ? 'text.secondary' : 'text.primary',
-                  fontWeight: task.completed ? 'normal' : 'medium'
+                  fontWeight: task.completed ? 'normal' : 'medium',
+                  wordBreak: 'break-word',
+                  minWidth: 0
                 }}
               >
                 {task.title}
               </Typography>
               
-              <Chip
-                label={TASK_TYPE_LABELS[task.taskType]}
-                size="small"
-                variant="outlined"
-                sx={{ 
-                  opacity: task.completed ? 0.7 : 1,
-                  backgroundColor: task.completed ? 'rgba(0,0,0,0.04)' : 'transparent'
-                }}
-              />
-              
-              <Chip
-                label={PRIORITY_LABELS[task.priority]}
-                size="small"
-                color={getPriorityColor(task.priority)}
-                sx={{ 
-                  opacity: task.completed ? 0.7 : 1,
-                  backgroundColor: task.completed ? 'rgba(0,0,0,0.04)' : undefined
-                }}
-              />
+              <Box 
+                display="flex" 
+                flexDirection={isMobile ? "row" : "row"}
+                gap={0.5}
+                flexWrap="wrap"
+                sx={{ mt: isMobile ? 1 : 0 }}
+              >
+                <Chip
+                  label={TASK_TYPE_LABELS[task.taskType]}
+                  size="small"
+                  variant="outlined"
+                  sx={{ 
+                    opacity: task.completed ? 0.7 : 1,
+                    backgroundColor: task.completed ? 'rgba(0,0,0,0.04)' : 'transparent',
+                    fontSize: isMobile ? '0.7rem' : '0.75rem'
+                  }}
+                />
+                
+                <Chip
+                  label={PRIORITY_LABELS[task.priority]}
+                  size="small"
+                  color={getPriorityColor(task.priority)}
+                  sx={{ 
+                    opacity: task.completed ? 0.7 : 1,
+                    backgroundColor: task.completed ? 'rgba(0,0,0,0.04)' : undefined,
+                    fontSize: isMobile ? '0.7rem' : '0.75rem'
+                  }}
+                />
+              </Box>
             </Box>
             
+            {/* タスク説明 */}
             {task.description && (
               <Typography 
                 variant="body2" 
@@ -130,14 +155,23 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 paragraph
                 sx={{
                   textDecoration: task.completed ? 'line-through' : 'none',
-                  opacity: task.completed ? 0.7 : 1
+                  opacity: task.completed ? 0.7 : 1,
+                  wordBreak: 'break-word',
+                  mb: 2
                 }}
               >
                 {task.description}
               </Typography>
             )}
             
-            <Box display="flex" alignItems="center" gap={1} mb={externalLink || hasNotes ? 2 : 0}>
+            {/* 期限表示 */}
+            <Box 
+              display="flex" 
+              alignItems="center" 
+              gap={1} 
+              mb={externalLink || hasNotes ? 2 : 0}
+              flexWrap="wrap"
+            >
               {urgency.type === 'overdue' && !task.completed && (
                 <WarningIcon color="error" fontSize="small" />
               )}
@@ -155,7 +189,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 }
                 sx={{
                   textDecoration: task.completed ? 'line-through' : 'none',
-                  opacity: task.completed ? 0.7 : 1
+                  opacity: task.completed ? 0.7 : 1,
+                  wordBreak: 'break-word',
+                  fontSize: isMobile ? '0.75rem' : '0.875rem'
                 }}
               >
                 期限: {task.dueDate ? format(parseISO(task.dueDate), 'MM月dd日 HH:mm', { locale: ja }) : '未設定'}
@@ -172,10 +208,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               <Box mb={hasNotes ? 1 : 0}>
                 <Button
                   variant="outlined"
-                  size="small"
+                  size={isMobile ? "small" : "small"}
                   startIcon={<LaunchIcon />}
                   onClick={() => window.open(externalLink, '_blank')}
-                  sx={{ opacity: task.completed ? 0.7 : 1 }}
+                  sx={{ 
+                    opacity: task.completed ? 0.7 : 1,
+                    fontSize: isMobile ? '0.75rem' : '0.875rem'
+                  }}
+                  fullWidth={isMobile}
                 >
                   {task.taskType === 'community' ? 'コミュニティアプリを開く' : 'Instagramを開く'}
                 </Button>
@@ -194,16 +234,19 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   opacity: task.completed ? 0.7 : 1
                 }}
               >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography variant="body2">
+                <AccordionSummary 
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{ minHeight: isMobile ? '40px' : '48px' }}
+                >
+                  <Typography variant="body2" sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>
                     {task.taskType === 'preparation' ? '準備物メモ' : '反省会メモ'}
                   </Typography>
                 </AccordionSummary>
-                <AccordionDetails>
+                <AccordionDetails sx={{ p: isMobile ? 1 : 2 }}>
                   <Box display="flex" flexDirection="column" gap={1}>
                     <TextField
                       multiline
-                      rows={4}
+                      rows={isMobile ? 3 : 4}
                       fullWidth
                       placeholder={
                         task.taskType === 'preparation' 
@@ -214,6 +257,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                       onChange={(e) => setNotes(e.target.value)}
                       variant="outlined"
                       size="small"
+                      sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}
                     />
                     <Box display="flex" justifyContent="flex-end">
                       <Button
@@ -222,6 +266,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                         startIcon={<SaveIcon />}
                         onClick={handleSaveNotes}
                         disabled={notes === (task.notes || '')}
+                        sx={{ fontSize: isMobile ? '0.7rem' : '0.75rem' }}
                       >
                         保存
                       </Button>

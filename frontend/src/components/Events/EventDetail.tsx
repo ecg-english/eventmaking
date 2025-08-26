@@ -8,7 +8,9 @@ import {
   Chip,
   Grid,
   LinearProgress,
-  Alert
+  Alert,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -29,6 +31,8 @@ export const EventDetail: React.FC = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const loadEventAndTasks = useCallback(async () => {
     try {
@@ -162,7 +166,7 @@ export const EventDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <Container>
+      <Container maxWidth="lg" sx={{ px: isMobile ? 1 : 3 }}>
         <Box mt={4}>
           <LinearProgress />
           <Typography variant="body2" color="text.secondary" mt={2} textAlign="center">
@@ -175,7 +179,7 @@ export const EventDetail: React.FC = () => {
 
   if (error || !event) {
     return (
-      <Container>
+      <Container maxWidth="lg" sx={{ px: isMobile ? 1 : 3 }}>
         <Box mt={4}>
           <Alert severity="error">{error || 'イベントが見つかりません'}</Alert>
           <Button 
@@ -193,76 +197,124 @@ export const EventDetail: React.FC = () => {
   const progress = calculateProgress();
 
   return (
-    <Container maxWidth="lg">
-      <Box mt={4} mb={4}>
+    <Container maxWidth="lg" sx={{ px: isMobile ? 1 : 3 }}>
+      <Box mt={isMobile ? 2 : 4} mb={isMobile ? 2 : 4}>
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate('/')}
           sx={{ mb: 2 }}
+          size={isMobile ? "small" : "medium"}
         >
           戻る
         </Button>
 
-        <Paper elevation={3} sx={{ p: 4, mb: 3 }}>
-          <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-            <Typography variant="h4" component="h1">
+        <Paper elevation={3} sx={{ p: isMobile ? 2 : 4, mb: 3 }}>
+          <Box 
+            display="flex" 
+            flexDirection={isMobile ? "column" : "row"}
+            justifyContent="space-between" 
+            alignItems={isMobile ? "flex-start" : "flex-start"} 
+            gap={isMobile ? 2 : 0}
+            mb={2}
+          >
+            <Typography 
+              variant={isMobile ? "h5" : "h4"} 
+              component="h1"
+              sx={{ wordBreak: 'break-word' }}
+            >
               {event.title}
             </Typography>
-            <Box display="flex" gap={1} alignItems="center">
+            <Box 
+              display="flex" 
+              flexDirection={isMobile ? "row" : "row"}
+              gap={1} 
+              alignItems="center"
+              flexWrap="wrap"
+            >
               <Chip
                 label={STATUS_LABELS[event.status]}
                 color={getStatusColor(event.status)}
+                size={isMobile ? "small" : "medium"}
               />
               <Button
                 variant="outlined"
                 startIcon={<EditIcon />}
                 onClick={() => navigate(`/events/${id}/edit`)}
+                size={isMobile ? "small" : "medium"}
               >
                 編集
               </Button>
             </Box>
           </Box>
 
-          <Typography variant="h6" color="primary" gutterBottom>
+          <Typography 
+            variant={isMobile ? "h6" : "h6"} 
+            color="primary" 
+            gutterBottom
+            sx={{ wordBreak: 'break-word' }}
+          >
             {format(parseISO(event.eventDate), 'yyyy年MM月dd日 HH:mm', { locale: ja })}
           </Typography>
 
           {event.description && (
-            <Typography variant="body1" paragraph>
+            <Typography 
+              variant="body1" 
+              paragraph
+              sx={{ 
+                wordBreak: 'break-word',
+                fontSize: isMobile ? '0.875rem' : '1rem'
+              }}
+            >
               {event.description}
             </Typography>
           )}
 
           <Box mt={3}>
-            <Typography variant="h6" gutterBottom>
+            <Typography 
+              variant={isMobile ? "h6" : "h6"} 
+              gutterBottom
+              sx={{ fontSize: isMobile ? '1rem' : '1.25rem' }}
+            >
               進捗状況: {progress}%
             </Typography>
             <Box display="flex" alignItems="center" gap={2}>
               <LinearProgress 
                 variant="determinate" 
                 value={progress} 
-                sx={{ flexGrow: 1, height: 8, borderRadius: 4 }}
+                sx={{ flexGrow: 1, height: isMobile ? 6 : 8, borderRadius: 4 }}
               />
-              <Typography variant="body2" color="text.secondary">
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}
+              >
                 {tasks.filter(task => task.completed).length} / {tasks.length} タスク完了
               </Typography>
             </Box>
           </Box>
         </Paper>
 
-        <Typography variant="h5" gutterBottom>
+        <Typography 
+          variant={isMobile ? "h5" : "h5"} 
+          gutterBottom
+          sx={{ fontSize: isMobile ? '1.25rem' : '1.5rem' }}
+        >
           タスク一覧
         </Typography>
 
         {tasks.length === 0 ? (
-          <Paper sx={{ p: 4, textAlign: 'center' }}>
-            <ScheduleIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="body1" color="text.secondary">
+          <Paper sx={{ p: isMobile ? 3 : 4, textAlign: 'center' }}>
+            <ScheduleIcon sx={{ fontSize: isMobile ? 36 : 48, color: 'text.secondary', mb: 2 }} />
+            <Typography 
+              variant="body1" 
+              color="text.secondary"
+              sx={{ fontSize: isMobile ? '0.875rem' : '1rem' }}
+            >
               タスクがありません
             </Typography>
           </Paper>
         ) : (
-          <Grid container spacing={2}>
+          <Grid container spacing={isMobile ? 1 : 2}>
             {tasks
               .sort((a, b) => {
                 try {
