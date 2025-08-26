@@ -47,7 +47,7 @@ npm run dev
 ## アクセスURL
 
 - **フロントエンド**: https://ecg-english.github.io/eventmaking
-- **バックエンド**: https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec
+- **バックエンド**: https://script.google.com/macros/s/AKfycbwK28csyuvdqHrqmh-nnCB9MyLOo77Ig-vGS4GeAZnM9RtwNObYTV9Nk3rHmidYJddD/exec
 - **GitHub**: https://github.com/ecg-english/eventmaking
 
 ## イベント作成フロー

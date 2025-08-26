@@ -13,7 +13,7 @@ import {
 // 本番環境ではGASのURL、開発環境ではローカルサーバーを使用
 const API_BASE_URL = process.env.REACT_APP_API_URL ||
   (process.env.NODE_ENV === 'production'
-    ? 'https://script.google.com/macros/s/AKfycbzCfjsdaj7C43Wztk6vzQ3Wz-eOHL8zsQamj7Z84h9NYhd3q9mrmsaRjofIcQ5ADLPP/exec/api'
+    ? 'https://script.google.com/macros/s/AKfycbwK28csyuvdqHrqmh-nnCB9MyLOo77Ig-vGS4GeAZnM9RtwNObYTV9Nk3rHmidYJddD/exec/api'
     : 'http://localhost:5001/api'
   );
 

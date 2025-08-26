@@ -93,7 +93,7 @@ GitHub Pagesでは環境変数が使えないため、ビルド時にAPI URLを�
 
 ```bash
 # ビルド時に環境変数を設定
-REACT_APP_API_URL=https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec/api npm run build
+REACT_APP_API_URL=https://script.google.com/macros/s/AKfycbwK28csyuvdqHrqmh-nnCB9MyLOo77Ig-vGS4GeAZnM9RtwNObYTV9Nk3rHmidYJddD/exec/api npm run build
 ```
 
 ### 4. 自動デプロイの設定
@@ -120,7 +120,7 @@ git push
 ## 🔗 アクセスURL
 
 - **フロントエンド**: https://ecg-english.github.io/eventmaking
-- **バックエンド**: https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec
+- **バックエンド**: https://script.google.com/macros/s/AKfycbwK28csyuvdqHrqmh-nnCB9MyLOo77Ig-vGS4GeAZnM9RtwNObYTV9Nk3rHmidYJddD/exec
 
 ## 🧪 テスト
 
