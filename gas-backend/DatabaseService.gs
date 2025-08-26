@@ -53,21 +53,27 @@ class DatabaseService {
     const sheet = this.getOrCreateSheet('events');
     const data = sheet.getDataRange().getValues();
     
-    if (data.length <= 1) {
+    if (data.length === 0) {
       return [];
     }
 
     const events = [];
-    for (let i = 1; i < data.length; i++) {
+    // 1行目がヘッダーかどうかをチェック
+    const startRow = (data[0][0] === 'id') ? 1 : 0;
+    
+    for (let i = startRow; i < data.length; i++) {
       const row = data[i];
+      // 空行をスキップ
+      if (!row[0] || row[0] === '') continue;
+      
       events.push({
         id: row[0],
-        title: row[1],
-        description: row[2],
-        eventDate: row[3],
-        status: row[4],
-        createdAt: row[5],
-        updatedAt: row[6]
+        title: row[1] || '',
+        description: row[2] || '',
+        eventDate: row[3] || '',
+        status: row[4] || 'planning',
+        createdAt: row[5] || new Date().toISOString(),
+        updatedAt: row[6] || new Date().toISOString()
       });
     }
     
@@ -81,17 +87,24 @@ class DatabaseService {
     const sheet = this.getOrCreateSheet('events');
     const data = sheet.getDataRange().getValues();
     
-    for (let i = 1; i < data.length; i++) {
+    if (data.length === 0) {
+      return null;
+    }
+
+    // 1行目がヘッダーかどうかをチェック
+    const startRow = (data[0][0] === 'id') ? 1 : 0;
+    
+    for (let i = startRow; i < data.length; i++) {
       const row = data[i];
       if (row[0] === eventId) {
         return {
           id: row[0],
-          title: row[1],
-          description: row[2],
-          eventDate: row[3],
-          status: row[4],
-          createdAt: row[5],
-          updatedAt: row[6]
+          title: row[1] || '',
+          description: row[2] || '',
+          eventDate: row[3] || '',
+          status: row[4] || 'planning',
+          createdAt: row[5] || new Date().toISOString(),
+          updatedAt: row[6] || new Date().toISOString()
         };
       }
     }
@@ -162,21 +175,31 @@ class DatabaseService {
     const sheet = this.getOrCreateSheet('tasks');
     const data = sheet.getDataRange().getValues();
     
+    if (data.length === 0) {
+      return [];
+    }
+
     const tasks = [];
-    for (let i = 1; i < data.length; i++) {
+    // 1行目がヘッダーかどうかをチェック
+    const startRow = (data[0][0] === 'id') ? 1 : 0;
+    
+    for (let i = startRow; i < data.length; i++) {
       const row = data[i];
+      // 空行をスキップ
+      if (!row[0] || row[0] === '') continue;
+      
       if (row[1] === eventId) {
         tasks.push({
           id: row[0],
           eventId: row[1],
-          title: row[2],
-          description: row[3],
-          dueDate: row[4],
-          completed: row[5],
-          taskType: row[6],
-          priority: row[7],
-          createdAt: row[8],
-          updatedAt: row[9]
+          title: row[2] || '',
+          description: row[3] || '',
+          dueDate: row[4] || '',
+          completed: row[5] || false,
+          taskType: row[6] || 'custom',
+          priority: row[7] || 'medium',
+          createdAt: row[8] || new Date().toISOString(),
+          updatedAt: row[9] || new Date().toISOString()
         });
       }
     }
@@ -191,20 +214,27 @@ class DatabaseService {
     const sheet = this.getOrCreateSheet('tasks');
     const data = sheet.getDataRange().getValues();
     
-    for (let i = 1; i < data.length; i++) {
+    if (data.length === 0) {
+      return null;
+    }
+
+    // 1行目がヘッダーかどうかをチェック
+    const startRow = (data[0][0] === 'id') ? 1 : 0;
+    
+    for (let i = startRow; i < data.length; i++) {
       const row = data[i];
       if (row[0] === taskId) {
         return {
           id: row[0],
           eventId: row[1],
-          title: row[2],
-          description: row[3],
-          dueDate: row[4],
-          completed: row[5],
-          taskType: row[6],
-          priority: row[7],
-          createdAt: row[8],
-          updatedAt: row[9]
+          title: row[2] || '',
+          description: row[3] || '',
+          dueDate: row[4] || '',
+          completed: row[5] || false,
+          taskType: row[6] || 'custom',
+          priority: row[7] || 'medium',
+          createdAt: row[8] || new Date().toISOString(),
+          updatedAt: row[9] || new Date().toISOString()
         };
       }
     }
