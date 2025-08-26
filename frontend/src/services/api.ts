@@ -9,60 +9,22 @@ class ApiService {
     return this.createJSONPRequest<T>(path);
   }
 
-  // POST リクエスト
+  // POST リクエスト（JSONPベース）
   async post<T>(path: string, data: any): Promise<T> {
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}?path=${path}`,
-        JSON.stringify(data),
-        {
-          headers: {
-            'Content-Type': 'text/plain'
-          }
-        }
-      );
-      return response.data;
-    } catch (error) {
-      console.error('POST request failed:', error);
-      throw error;
-    }
+    return this.createJSONPPostRequest<T>(path, data);
   }
 
-  // PUT リクエスト
+  // PUT リクエスト（JSONPベース）
   async put<T>(path: string, data: any): Promise<T> {
-    try {
-      const response = await axios.put(
-        `${API_BASE_URL}?path=${path}`,
-        JSON.stringify(data),
-        {
-          headers: {
-            'Content-Type': 'text/plain'
-          }
-        }
-      );
-      return response.data;
-    } catch (error) {
-      console.error('PUT request failed:', error);
-      throw error;
-    }
+    return this.createJSONPPostRequest<T>(path, data, 'PUT');
   }
 
-  // DELETE リクエスト
+  // DELETE リクエスト（JSONPベース）
   async delete<T>(path: string): Promise<T> {
-    try {
-      const response = await axios.delete(`${API_BASE_URL}?path=${path}`, {
-        headers: {
-          'Content-Type': 'text/plain'
-        }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('DELETE request failed:', error);
-      throw error;
-    }
+    return this.createJSONPPostRequest<T>(path, { action: 'delete' }, 'DELETE');
   }
 
-  // JSONPリクエスト
+  // JSONPリクエスト（GET用）
   private createJSONPRequest<T>(path: string): Promise<T> {
     return new Promise((resolve, reject) => {
       const callbackName = 'jsonpCallback_' + Math.random().toString(36).substr(2, 9);
@@ -82,6 +44,45 @@ class ApiService {
       };
 
       document.head.appendChild(script);
+    });
+  }
+
+  // JSONPリクエスト（POST/PUT/DELETE用）
+  private createJSONPPostRequest<T>(path: string, data: any, method: string = 'POST'): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const callbackName = 'jsonpCallback_' + Math.random().toString(36).substr(2, 9);
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `${API_BASE_URL}?path=${path}&callback=${callbackName}&method=${method}`;
+      form.target = 'jsonp_iframe_' + Math.random().toString(36).substr(2, 9);
+      
+      // データをフォームに追加
+      Object.keys(data).forEach(key => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = typeof data[key] === 'object' ? JSON.stringify(data[key]) : data[key];
+        form.appendChild(input);
+      });
+      
+      // コールバック関数を設定
+      (window as any)[callbackName] = (data: T) => {
+        resolve(data);
+        document.body.removeChild(form);
+        delete (window as any)[callbackName];
+      };
+
+      document.body.appendChild(form);
+      form.submit();
+      
+      // タイムアウト処理
+      setTimeout(() => {
+        if ((window as any)[callbackName]) {
+          reject(new Error('JSONP POST request timeout'));
+          document.body.removeChild(form);
+          delete (window as any)[callbackName];
+        }
+      }, 10000);
     });
   }
 
@@ -119,9 +120,8 @@ class ApiService {
     try {
       return await this.put<EventTask>(`events/tasks/${taskId}`, updates);
     } catch (error) {
-      console.error('PUT request failed, trying JSONP:', error);
+      console.error('PUT request failed:', error);
       // エラーが発生した場合は、更新された情報のみを含むレスポンスを返す
-      // フロントエンド側で元のタスク情報とマージする
       const mockResponse: Partial<EventTask> = {
         id: taskId,
         ...updates,
