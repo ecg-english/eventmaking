@@ -1,258 +1,183 @@
 /**
- * イベントサービス
+ * イベント管理サービス
  */
 class EventService {
-  
   constructor() {
     this.db = new DatabaseService();
-    this.taskTemplates = this.getDefaultTaskTemplates();
   }
-  
+
   /**
-   * イベント作成
+   * 全イベントを取得
    */
-  createEvent(title, description, eventDate, userId) {
-    const eventId = this.generateId();
-    const now = new Date().toISOString();
-    
+  getAllEvents() {
+    return this.db.getAllEvents();
+  }
+
+  /**
+   * 指定されたIDのイベントを取得
+   */
+  getEventById(eventId) {
+    return this.db.getEventById(eventId);
+  }
+
+  /**
+   * 新しいイベントを作成
+   */
+  createEvent(title, description, eventDate) {
     const event = {
-      id: eventId,
+      id: this.generateId(),
       title: title,
       description: description || '',
       eventDate: eventDate,
-      createdAt: now,
-      updatedAt: now,
       status: 'planning',
-      userId: userId
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
-    
+
     this.db.createEvent(event);
     
     // デフォルトタスクを自動生成
-    this.createDefaultTasks(eventId, new Date(eventDate));
+    this.createDefaultTasks(event.id);
     
-    return this.getEventById(eventId, userId);
+    return event;
   }
-  
+
   /**
-   * イベント取得（ID指定）
+   * イベントを更新
    */
-  getEventById(eventId, userId) {
+  updateEvent(eventId, updates) {
     const event = this.db.getEventById(eventId);
     if (!event) {
       throw new Error('イベントが見つかりません');
     }
-    
-    // ユーザーの所有権チェック
-    if (event.userId !== userId) {
-      throw new Error('アクセス権限がありません');
-    }
-    
-    return event;
-  }
-  
-  /**
-   * ユーザーのイベント一覧取得
-   */
-  getEventsByUserId(userId) {
-    return this.db.getEventsByUserId(userId);
-  }
-  
-  /**
-   * イベント更新
-   */
-  updateEvent(eventId, updates, userId) {
-    const event = this.getEventById(eventId, userId);
-    
+
     const updatedEvent = {
       ...event,
       ...updates,
       updatedAt: new Date().toISOString()
     };
-    
+
     this.db.updateEvent(eventId, updatedEvent);
     return updatedEvent;
   }
-  
+
   /**
-   * イベント削除
+   * イベントを削除
    */
-  deleteEvent(eventId, userId) {
-    const event = this.getEventById(eventId, userId);
+  deleteEvent(eventId) {
+    const event = this.db.getEventById(eventId);
+    if (!event) {
+      throw new Error('イベントが見つかりません');
+    }
+
     this.db.deleteEvent(eventId);
     return { message: 'イベントが削除されました' };
   }
-  
+
   /**
-   * イベントのタスク一覧取得
+   * イベントのタスクを取得
    */
-  getEventTasks(eventId, userId) {
-    const event = this.getEventById(eventId, userId);
+  getEventTasks(eventId) {
     return this.db.getEventTasks(eventId);
   }
-  
+
   /**
-   * タスク作成
+   * タスクを作成
    */
-  createTask(eventId, taskData, userId) {
-    const event = this.getEventById(eventId, userId);
-    
-    const taskId = this.generateId();
-    const now = new Date().toISOString();
-    
+  createTask(eventId, taskData) {
     const task = {
-      id: taskId,
+      id: this.generateId(),
       eventId: eventId,
       title: taskData.title,
       description: taskData.description || '',
       dueDate: taskData.dueDate,
       completed: false,
-      taskType: taskData.taskType,
-      createdAt: now,
-      updatedAt: now,
-      priority: taskData.priority || 'medium'
+      taskType: taskData.taskType || 'custom',
+      priority: taskData.priority || 'medium',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
-    
+
     this.db.createTask(task);
     return task;
   }
-  
+
   /**
-   * タスク更新
+   * タスクを更新
    */
-  updateTask(taskId, updates, userId) {
+  updateTask(taskId, updates) {
     const task = this.db.getTaskById(taskId);
     if (!task) {
       throw new Error('タスクが見つかりません');
     }
-    
-    // イベントの所有権チェック
-    const event = this.getEventById(task.eventId, userId);
-    
+
     const updatedTask = {
       ...task,
       ...updates,
       updatedAt: new Date().toISOString()
     };
-    
+
     this.db.updateTask(taskId, updatedTask);
     return updatedTask;
   }
-  
+
   /**
-   * タスク削除
+   * タスクを削除
    */
-  deleteTask(taskId, userId) {
+  deleteTask(taskId) {
     const task = this.db.getTaskById(taskId);
     if (!task) {
       throw new Error('タスクが見つかりません');
     }
-    
-    // イベントの所有権チェック
-    const event = this.getEventById(task.eventId, userId);
-    
+
     this.db.deleteTask(taskId);
     return { message: 'タスクが削除されました' };
   }
-  
+
   /**
    * デフォルトタスクを自動生成
    */
-  createDefaultTasks(eventId, eventDate) {
-    for (const template of this.taskTemplates) {
-      const dueDate = new Date(eventDate);
-      dueDate.setDate(dueDate.getDate() - template.daysBeforeEvent);
-      
-      this.createTask(eventId, {
-        title: template.title,
-        description: template.description,
-        dueDate: dueDate.toISOString(),
-        taskType: template.taskType,
-        priority: template.priority
-      }, this.db.getEventById(eventId).userId);
-    }
-  }
-  
-  /**
-   * デフォルトタスクテンプレート
-   */
-  getDefaultTaskTemplates() {
-    return [
+  createDefaultTasks(eventId) {
+    const defaultTasks = [
       {
-        taskType: 'proposal',
         title: '企画書作成',
-        description: 'イベントの詳細な企画書を作成する',
-        daysBeforeEvent: 30,
-        priority: 'high'
+        description: 'イベントの企画書を作成する',
+        taskType: 'proposal',
+        priority: 'high',
+        daysBeforeEvent: 30
       },
       {
-        taskType: 'flyer',
         title: 'フライヤー作成',
-        description: 'イベント告知用のフライヤーをデザイン・作成する',
-        daysBeforeEvent: 30,
-        priority: 'high'
+        description: 'イベントのフライヤーを作成する',
+        taskType: 'flyer',
+        priority: 'medium',
+        daysBeforeEvent: 30
       },
       {
-        taskType: 'community',
-        title: 'コミュニティアプリ投稿',
-        description: 'コミュニティアプリにイベント情報を投稿する',
-        daysBeforeEvent: 30,
-        priority: 'medium'
-      },
-      {
+        title: 'SNS投稿',
+        description: 'イベントのSNS投稿を行う',
         taskType: 'instagram',
-        title: 'Instagram投稿',
-        description: 'Instagramにイベント告知を投稿する',
-        daysBeforeEvent: 30,
-        priority: 'medium'
-      },
-      {
-        taskType: 'line',
-        title: '公式LINE予約投稿',
-        description: '公式LINEでイベント予約受付を開始する',
-        daysBeforeEvent: 30,
-        priority: 'medium'
-      },
-      {
-        taskType: 'print',
-        title: 'フライヤー印刷・店舗張り出し',
-        description: 'フライヤーを印刷し、店舗に張り出す',
-        daysBeforeEvent: 30,
-        priority: 'medium'
-      },
-      {
-        taskType: 'meetup',
-        title: 'Meetup投稿',
-        description: 'Meetupにイベント情報を投稿する',
-        daysBeforeEvent: 7,
-        priority: 'medium'
-      },
-      {
-        taskType: 'story',
-        title: 'ストーリー投稿',
-        description: 'SNSストーリーでイベントを告知する',
-        daysBeforeEvent: 7,
-        priority: 'low'
-      },
-      {
-        taskType: 'story-repost',
-        title: 'ストーリー再投稿',
-        description: 'イベント前日にストーリーで再度告知する',
-        daysBeforeEvent: 1,
-        priority: 'low'
-      },
-      {
-        taskType: 'execution',
-        title: '実施・反省会',
-        description: 'イベント実施と終了後の反省会を行う',
-        daysBeforeEvent: 0,
-        priority: 'high'
+        priority: 'medium',
+        daysBeforeEvent: 7
       }
     ];
+
+    defaultTasks.forEach(taskTemplate => {
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + taskTemplate.daysBeforeEvent);
+      
+      this.createTask(eventId, {
+        title: taskTemplate.title,
+        description: taskTemplate.description,
+        dueDate: dueDate.toISOString(),
+        taskType: taskTemplate.taskType,
+        priority: taskTemplate.priority
+      });
+    });
   }
-  
+
   /**
-   * ID生成
+   * IDを生成
    */
   generateId() {
     return Utilities.getUuid();

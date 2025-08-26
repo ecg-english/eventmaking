@@ -38,26 +38,10 @@ function doDelete(e) {
  */
 function handleRequest(e, method) {
   try {
-    // デバッグ用ログ
-    console.log('CORS_ORIGIN:', CORS_ORIGIN);
-    console.log('Request method:', method);
-    console.log('Request headers:', e.headers);
-    
-    // CORSヘッダーを設定
-    const headers = {
-      'Access-Control-Allow-Origin': CORS_ORIGIN,
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Content-Type': 'application/json'
-    };
-
     // OPTIONSリクエスト（プリフライト）の処理
     if (method === 'OPTIONS') {
       return ContentService.createTextOutput('')
-        .setMimeType(ContentService.MimeType.TEXT)
-        .setHeader('Access-Control-Allow-Origin', CORS_ORIGIN)
-        .setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-        .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        .setMimeType(ContentService.MimeType.TEXT);
     }
 
     const path = e.parameter.path || '';
@@ -68,8 +52,6 @@ function handleRequest(e, method) {
     // ルーティング
     if (path === 'health') {
       response = { status: 'OK', timestamp: new Date().toISOString() };
-    } else if (pathParts[0] === 'auth') {
-      response = handleAuthRequest(pathParts, method, e);
     } else if (pathParts[0] === 'events') {
       response = handleEventRequest(pathParts, method, e);
     } else {
@@ -77,7 +59,6 @@ function handleRequest(e, method) {
         message: 'イベント管理システム API',
         version: '1.0.0',
         endpoints: {
-          auth: '/auth',
           events: '/events',
           health: '/health'
         }
@@ -85,10 +66,7 @@ function handleRequest(e, method) {
     }
 
     return ContentService.createTextOutput(JSON.stringify(response))
-      .setMimeType(ContentService.MimeType.JSON)
-      .setHeader('Access-Control-Allow-Origin', CORS_ORIGIN)
-      .setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-      .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      .setMimeType(ContentService.MimeType.JSON);
 
   } catch (error) {
     console.error('Error handling request:', error);
@@ -96,39 +74,8 @@ function handleRequest(e, method) {
       error: 'サーバー内部エラーが発生しました',
       details: error.toString()
     }))
-      .setMimeType(ContentService.MimeType.JSON)
-      .setHeader('Access-Control-Allow-Origin', CORS_ORIGIN)
-      .setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-      .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      .setMimeType(ContentService.MimeType.JSON);
   }
-}
-
-/**
- * 認証関連のリクエストを処理
- */
-function handleAuthRequest(pathParts, method, e) {
-  const authService = new AuthService();
-  
-  if (method === 'POST' && pathParts[1] === 'register') {
-    const data = JSON.parse(e.postData.contents);
-    return authService.register(data.email, data.name, data.password);
-  } else if (method === 'POST' && pathParts[1] === 'login') {
-    const data = JSON.parse(e.postData.contents);
-    return authService.login(data.email, data.password);
-  } else if (method === 'GET' && pathParts[1] === 'me') {
-    const token = getAuthToken(e);
-    return authService.getCurrentUser(token);
-  } else if (method === 'PUT' && pathParts[1] === 'me') {
-    const token = getAuthToken(e);
-    const data = JSON.parse(e.postData.contents);
-    return authService.updateUser(token, data);
-  } else if (method === 'PUT' && pathParts[1] === 'change-password') {
-    const token = getAuthToken(e);
-    const data = JSON.parse(e.postData.contents);
-    return authService.changePassword(token, data.currentPassword, data.newPassword);
-  }
-  
-  throw new Error('認証エンドポイントが見つかりません');
 }
 
 /**
@@ -136,45 +83,32 @@ function handleAuthRequest(pathParts, method, e) {
  */
 function handleEventRequest(pathParts, method, e) {
   const eventService = new EventService();
-  const token = getAuthToken(e);
-  const userId = new AuthService().verifyToken(token).userId;
   
   if (method === 'GET' && pathParts.length === 1) {
-    return eventService.getEventsByUserId(userId);
+    return eventService.getAllEvents();
   } else if (method === 'GET' && pathParts.length === 2) {
-    return eventService.getEventById(pathParts[1], userId);
+    return eventService.getEventById(pathParts[1]);
   } else if (method === 'POST' && pathParts.length === 1) {
     const data = JSON.parse(e.postData.contents);
-    return eventService.createEvent(data.title, data.description, data.eventDate, userId);
+    return eventService.createEvent(data.title, data.description, data.eventDate);
   } else if (method === 'PUT' && pathParts.length === 2) {
     const data = JSON.parse(e.postData.contents);
-    return eventService.updateEvent(pathParts[1], data, userId);
+    return eventService.updateEvent(pathParts[1], data);
   } else if (method === 'DELETE' && pathParts.length === 2) {
-    return eventService.deleteEvent(pathParts[1], userId);
+    return eventService.deleteEvent(pathParts[1]);
   } else if (method === 'GET' && pathParts.length === 3 && pathParts[2] === 'tasks') {
-    return eventService.getEventTasks(pathParts[1], userId);
+    return eventService.getEventTasks(pathParts[1]);
   } else if (method === 'POST' && pathParts.length === 3 && pathParts[2] === 'tasks') {
     const data = JSON.parse(e.postData.contents);
-    return eventService.createTask(pathParts[1], data, userId);
+    return eventService.createTask(pathParts[1], data);
   } else if (method === 'PUT' && pathParts.length === 3 && pathParts[1] === 'tasks') {
     const data = JSON.parse(e.postData.contents);
-    return eventService.updateTask(pathParts[2], data, userId);
+    return eventService.updateTask(pathParts[2], data);
   } else if (method === 'DELETE' && pathParts.length === 3 && pathParts[1] === 'tasks') {
-    return eventService.deleteTask(pathParts[2], userId);
+    return eventService.deleteTask(pathParts[2]);
   }
   
   throw new Error('イベントエンドポイントが見つかりません');
-}
-
-/**
- * リクエストから認証トークンを取得
- */
-function getAuthToken(e) {
-  const authHeader = e.headers?.Authorization || e.headers?.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw new Error('アクセストークンが必要です');
-  }
-  return authHeader.substring(7);
 }
 
 /**
@@ -187,20 +121,9 @@ function testAPI() {
   const healthResponse = doGet({ parameter: { path: 'health' } });
   console.log('Health check:', healthResponse.getContent());
   
-  // CORS設定テスト
-  console.log('CORS_ORIGIN value:', CORS_ORIGIN);
+  // イベント一覧取得テスト
+  const eventsResponse = doGet({ parameter: { path: 'events' } });
+  console.log('Events list:', eventsResponse.getContent());
   
-  // ユーザー登録テスト
-  const registerData = {
-    email: 'test@example.com',
-    name: 'テストユーザー',
-    password: 'password123'
-  };
-  
-  const registerResponse = doPost({
-    parameter: { path: 'auth/register' },
-    postData: { contents: JSON.stringify(registerData) }
-  });
-  
-  console.log('Register response:', registerResponse.getContent());
+  console.log('GAS API テスト完了');
 } 

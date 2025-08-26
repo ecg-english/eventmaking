@@ -2,14 +2,11 @@
  * データベースサービス（Google Sheets使用）
  */
 class DatabaseService {
-  
   constructor() {
-    this.spreadsheet = this.getOrCreateSpreadsheet();
-    this.usersSheet = this.getOrCreateSheet('users');
-    this.eventsSheet = this.getOrCreateSheet('events');
-    this.tasksSheet = this.getOrCreateSheet('tasks');
+    this.spreadsheetId = this.getOrCreateSpreadsheet();
+    this.spreadsheet = SpreadsheetApp.openById(this.spreadsheetId);
   }
-  
+
   /**
    * スプレッドシートの取得または作成
    */
@@ -18,234 +15,209 @@ class DatabaseService {
     let spreadsheetId = scriptProperties.getProperty('SPREADSHEET_ID');
     
     if (!spreadsheetId) {
-      const spreadsheet = SpreadsheetApp.create('イベント管理システム データベース');
+      const spreadsheet = SpreadsheetApp.create('EventManagementDB');
       spreadsheetId = spreadsheet.getId();
       scriptProperties.setProperty('SPREADSHEET_ID', spreadsheetId);
     }
     
-    return SpreadsheetApp.openById(spreadsheetId);
+    return spreadsheetId;
   }
-  
+
   /**
-   * シートの取得または作成
+   * シートを取得または作成
    */
   getOrCreateSheet(sheetName) {
     let sheet = this.spreadsheet.getSheetByName(sheetName);
-    
     if (!sheet) {
       sheet = this.spreadsheet.insertSheet(sheetName);
-      
-      // ヘッダー行を設定
-      if (sheetName === 'users') {
-        sheet.getRange(1, 1, 1, 5).setValues([['id', 'email', 'name', 'password', 'createdAt']]);
-      } else if (sheetName === 'events') {
-        sheet.getRange(1, 1, 1, 8).setValues([['id', 'title', 'description', 'eventDate', 'createdAt', 'updatedAt', 'status', 'userId']]);
-      } else if (sheetName === 'tasks') {
-        sheet.getRange(1, 1, 1, 10).setValues([['id', 'eventId', 'title', 'description', 'dueDate', 'completed', 'taskType', 'createdAt', 'updatedAt', 'priority']]);
-      }
-      
-      // ヘッダー行を固定
-      sheet.setFrozenRows(1);
+      this.initializeSheet(sheet, sheetName);
     }
-    
     return sheet;
   }
-  
-  // ===== ユーザー関連 =====
-  
+
   /**
-   * ユーザー作成
+   * シートを初期化
    */
-  createUser(user) {
-    const row = [
-      user.id,
-      user.email,
-      user.name,
-      user.password,
-      user.createdAt
-    ];
-    
-    this.usersSheet.appendRow(row);
+  initializeSheet(sheet, sheetName) {
+    if (sheetName === 'events') {
+      sheet.getRange('A1:G1').setValues([['id', 'title', 'description', 'eventDate', 'status', 'createdAt', 'updatedAt']]);
+    } else if (sheetName === 'tasks') {
+      sheet.getRange('A1:J1').setValues([['id', 'eventId', 'title', 'description', 'dueDate', 'completed', 'taskType', 'priority', 'createdAt', 'updatedAt']]);
+    }
   }
-  
+
   /**
-   * ユーザー取得（ID指定）
+   * 全イベントを取得
    */
-  getUserById(userId) {
-    const data = this.usersSheet.getDataRange().getValues();
-    const headers = data[0];
-    const userRow = data.find(row => row[0] === userId);
+  getAllEvents() {
+    const sheet = this.getOrCreateSheet('events');
+    const data = sheet.getDataRange().getValues();
     
-    if (!userRow) return null;
-    
-    return {
-      id: userRow[0],
-      email: userRow[1],
-      name: userRow[2],
-      password: userRow[3],
-      createdAt: userRow[4]
-    };
-  }
-  
-  /**
-   * ユーザー取得（メールアドレス指定）
-   */
-  getUserByEmail(email) {
-    const data = this.usersSheet.getDataRange().getValues();
-    const headers = data[0];
-    const userRow = data.find(row => row[1] === email);
-    
-    if (!userRow) return null;
-    
-    return {
-      id: userRow[0],
-      email: userRow[1],
-      name: userRow[2],
-      password: userRow[3],
-      createdAt: userRow[4]
-    };
-  }
-  
-  /**
-   * ユーザー更新
-   */
-  updateUser(userId, updates) {
-    const data = this.usersSheet.getDataRange().getValues();
-    const userRowIndex = data.findIndex(row => row[0] === userId);
-    
-    if (userRowIndex === -1) {
-      throw new Error('ユーザーが見つかりません');
+    if (data.length <= 1) {
+      return [];
+    }
+
+    const events = [];
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      events.push({
+        id: row[0],
+        title: row[1],
+        description: row[2],
+        eventDate: row[3],
+        status: row[4],
+        createdAt: row[5],
+        updatedAt: row[6]
+      });
     }
     
-    const userRow = data[userRowIndex];
-    const updatedRow = [...userRow];
-    
-    if (updates.name) updatedRow[2] = updates.name;
-    if (updates.email) updatedRow[1] = updates.email;
-    if (updates.password) updatedRow[3] = updates.password;
-    
-    this.usersSheet.getRange(userRowIndex + 1, 1, 1, updatedRow.length).setValues([updatedRow]);
-    
-    return {
-      id: updatedRow[0],
-      email: updatedRow[1],
-      name: updatedRow[2],
-      password: updatedRow[3],
-      createdAt: updatedRow[4]
-    };
+    return events;
   }
-  
-  // ===== イベント関連 =====
-  
+
   /**
-   * イベント作成
+   * 指定されたIDのイベントを取得
+   */
+  getEventById(eventId) {
+    const sheet = this.getOrCreateSheet('events');
+    const data = sheet.getDataRange().getValues();
+    
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      if (row[0] === eventId) {
+        return {
+          id: row[0],
+          title: row[1],
+          description: row[2],
+          eventDate: row[3],
+          status: row[4],
+          createdAt: row[5],
+          updatedAt: row[6]
+        };
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * イベントを作成
    */
   createEvent(event) {
-    const row = [
+    const sheet = this.getOrCreateSheet('events');
+    sheet.appendRow([
       event.id,
       event.title,
       event.description,
       event.eventDate,
-      event.createdAt,
-      event.updatedAt,
       event.status,
-      event.userId
-    ];
-    
-    this.eventsSheet.appendRow(row);
+      event.createdAt,
+      event.updatedAt
+    ]);
   }
-  
+
   /**
-   * イベント取得（ID指定）
+   * イベントを更新
    */
-  getEventById(eventId) {
-    const data = this.eventsSheet.getDataRange().getValues();
-    const eventRow = data.find(row => row[0] === eventId);
+  updateEvent(eventId, event) {
+    const sheet = this.getOrCreateSheet('events');
+    const data = sheet.getDataRange().getValues();
     
-    if (!eventRow) return null;
-    
-    return {
-      id: eventRow[0],
-      title: eventRow[1],
-      description: eventRow[2],
-      eventDate: eventRow[3],
-      createdAt: eventRow[4],
-      updatedAt: eventRow[5],
-      status: eventRow[6],
-      userId: eventRow[7]
-    };
-  }
-  
-  /**
-   * ユーザーのイベント一覧取得
-   */
-  getEventsByUserId(userId) {
-    const data = this.eventsSheet.getDataRange().getValues();
-    const headers = data[0];
-    const userEvents = data.filter(row => row[7] === userId);
-    
-    return userEvents.map(row => ({
-      id: row[0],
-      title: row[1],
-      description: row[2],
-      eventDate: row[3],
-      createdAt: row[4],
-      updatedAt: row[5],
-      status: row[6],
-      userId: row[7]
-    }));
-  }
-  
-  /**
-   * イベント更新
-   */
-  updateEvent(eventId, updatedEvent) {
-    const data = this.eventsSheet.getDataRange().getValues();
-    const eventRowIndex = data.findIndex(row => row[0] === eventId);
-    
-    if (eventRowIndex === -1) {
-      throw new Error('イベントが見つかりません');
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      if (row[0] === eventId) {
+        sheet.getRange(i + 1, 1, 1, 7).setValues([[
+          event.id,
+          event.title,
+          event.description,
+          event.eventDate,
+          event.status,
+          event.createdAt,
+          event.updatedAt
+        ]]);
+        break;
+      }
     }
-    
-    const row = [
-      updatedEvent.id,
-      updatedEvent.title,
-      updatedEvent.description,
-      updatedEvent.eventDate,
-      updatedEvent.createdAt,
-      updatedEvent.updatedAt,
-      updatedEvent.status,
-      updatedEvent.userId
-    ];
-    
-    this.eventsSheet.getRange(eventRowIndex + 1, 1, 1, row.length).setValues([row]);
-    return updatedEvent;
   }
-  
+
   /**
-   * イベント削除
+   * イベントを削除
    */
   deleteEvent(eventId) {
-    const data = this.eventsSheet.getDataRange().getValues();
-    const eventRowIndex = data.findIndex(row => row[0] === eventId);
+    const sheet = this.getOrCreateSheet('events');
+    const data = sheet.getDataRange().getValues();
     
-    if (eventRowIndex === -1) {
-      throw new Error('イベントが見つかりません');
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      if (row[0] === eventId) {
+        sheet.deleteRow(i + 1);
+        break;
+      }
+    }
+  }
+
+  /**
+   * イベントのタスクを取得
+   */
+  getEventTasks(eventId) {
+    const sheet = this.getOrCreateSheet('tasks');
+    const data = sheet.getDataRange().getValues();
+    
+    const tasks = [];
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      if (row[1] === eventId) {
+        tasks.push({
+          id: row[0],
+          eventId: row[1],
+          title: row[2],
+          description: row[3],
+          dueDate: row[4],
+          completed: row[5],
+          taskType: row[6],
+          priority: row[7],
+          createdAt: row[8],
+          updatedAt: row[9]
+        });
+      }
     }
     
-    this.eventsSheet.deleteRow(eventRowIndex + 1);
-    
-    // 関連するタスクも削除
-    this.deleteTasksByEventId(eventId);
+    return tasks;
   }
-  
-  // ===== タスク関連 =====
-  
+
   /**
-   * タスク作成
+   * 指定されたIDのタスクを取得
+   */
+  getTaskById(taskId) {
+    const sheet = this.getOrCreateSheet('tasks');
+    const data = sheet.getDataRange().getValues();
+    
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      if (row[0] === taskId) {
+        return {
+          id: row[0],
+          eventId: row[1],
+          title: row[2],
+          description: row[3],
+          dueDate: row[4],
+          completed: row[5],
+          taskType: row[6],
+          priority: row[7],
+          createdAt: row[8],
+          updatedAt: row[9]
+        };
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * タスクを作成
    */
   createTask(task) {
-    const row = [
+    const sheet = this.getOrCreateSheet('tasks');
+    sheet.appendRow([
       task.id,
       task.eventId,
       task.title,
@@ -253,113 +225,52 @@ class DatabaseService {
       task.dueDate,
       task.completed,
       task.taskType,
+      task.priority,
       task.createdAt,
-      task.updatedAt,
-      task.priority
-    ];
-    
-    this.tasksSheet.appendRow(row);
+      task.updatedAt
+    ]);
   }
-  
+
   /**
-   * タスク取得（ID指定）
+   * タスクを更新
    */
-  getTaskById(taskId) {
-    const data = this.tasksSheet.getDataRange().getValues();
-    const taskRow = data.find(row => row[0] === taskId);
+  updateTask(taskId, task) {
+    const sheet = this.getOrCreateSheet('tasks');
+    const data = sheet.getDataRange().getValues();
     
-    if (!taskRow) return null;
-    
-    return {
-      id: taskRow[0],
-      eventId: taskRow[1],
-      title: taskRow[2],
-      description: taskRow[3],
-      dueDate: taskRow[4],
-      completed: taskRow[5],
-      taskType: taskRow[6],
-      createdAt: taskRow[7],
-      updatedAt: taskRow[8],
-      priority: taskRow[9]
-    };
-  }
-  
-  /**
-   * イベントのタスク一覧取得
-   */
-  getEventTasks(eventId) {
-    const data = this.tasksSheet.getDataRange().getValues();
-    const headers = data[0];
-    const eventTasks = data.filter(row => row[1] === eventId);
-    
-    return eventTasks.map(row => ({
-      id: row[0],
-      eventId: row[1],
-      title: row[2],
-      description: row[3],
-      dueDate: row[4],
-      completed: row[5],
-      taskType: row[6],
-      createdAt: row[7],
-      updatedAt: row[8],
-      priority: row[9]
-    }));
-  }
-  
-  /**
-   * タスク更新
-   */
-  updateTask(taskId, updatedTask) {
-    const data = this.tasksSheet.getDataRange().getValues();
-    const taskRowIndex = data.findIndex(row => row[0] === taskId);
-    
-    if (taskRowIndex === -1) {
-      throw new Error('タスクが見つかりません');
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      if (row[0] === taskId) {
+        sheet.getRange(i + 1, 1, 1, 10).setValues([[
+          task.id,
+          task.eventId,
+          task.title,
+          task.description,
+          task.dueDate,
+          task.completed,
+          task.taskType,
+          task.priority,
+          task.createdAt,
+          task.updatedAt
+        ]]);
+        break;
+      }
     }
-    
-    const row = [
-      updatedTask.id,
-      updatedTask.eventId,
-      updatedTask.title,
-      updatedTask.description,
-      updatedTask.dueDate,
-      updatedTask.completed,
-      updatedTask.taskType,
-      updatedTask.createdAt,
-      updatedTask.updatedAt,
-      updatedTask.priority
-    ];
-    
-    this.tasksSheet.getRange(taskRowIndex + 1, 1, 1, row.length).setValues([row]);
-    return updatedTask;
   }
-  
+
   /**
-   * タスク削除
+   * タスクを削除
    */
   deleteTask(taskId) {
-    const data = this.tasksSheet.getDataRange().getValues();
-    const taskRowIndex = data.findIndex(row => row[0] === taskId);
+    const sheet = this.getOrCreateSheet('tasks');
+    const data = sheet.getDataRange().getValues();
     
-    if (taskRowIndex === -1) {
-      throw new Error('タスクが見つかりません');
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      if (row[0] === taskId) {
+        sheet.deleteRow(i + 1);
+        break;
+      }
     }
-    
-    this.tasksSheet.deleteRow(taskRowIndex + 1);
-  }
-  
-  /**
-   * イベントに関連するタスクを削除
-   */
-  deleteTasksByEventId(eventId) {
-    const data = this.tasksSheet.getDataRange().getValues();
-    const taskRowsToDelete = data
-      .map((row, index) => ({ row, index }))
-      .filter(({ row }) => row[1] === eventId)
-      .sort((a, b) => b.index - a.index); // 下から削除（インデックスがずれないように）
-    
-    taskRowsToDelete.forEach(({ index }) => {
-      this.tasksSheet.deleteRow(index + 1);
-    });
   }
 } 
