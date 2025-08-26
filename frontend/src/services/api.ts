@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Event, CreateEventData, EventTask, CreateTaskData } from '../types';
 
-const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbx00y0v63GUnK3Dsq6Qqy2iWvw4XpwNvRuh.../exec';
+const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbx00y0v63GUnK3Dsq6Qqy2iWvw4XpwNvRuhu8nxvzE2Ll0cQOH4afSJ0BkRUBNIK0Ug/exec';
 
 class ApiService {
   // GET リクエスト（JSONPのみ）
