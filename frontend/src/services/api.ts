@@ -22,12 +22,20 @@ class ApiService {
   }
 
   async createEvent(eventData: CreateEventData): Promise<Event> {
-    const response = await axios.post(`${API_BASE_URL}?path=events`, eventData);
+    const response = await axios.post(
+      `${API_BASE_URL}?path=events`,
+      JSON.stringify(eventData),
+      { headers: { 'Content-Type': 'text/plain' } }
+    );
     return response.data;
   }
 
   async updateEvent(id: string, updates: Partial<Event>): Promise<Event> {
-    const response = await axios.put(`${API_BASE_URL}?path=events/${id}`, updates);
+    const response = await axios.put(
+      `${API_BASE_URL}?path=events/${id}`,
+      JSON.stringify(updates),
+      { headers: { 'Content-Type': 'text/plain' } }
+    );
     return response.data;
   }
 
@@ -42,12 +50,20 @@ class ApiService {
   }
 
   async createTask(eventId: string, taskData: CreateTaskData): Promise<EventTask> {
-    const response = await axios.post(`${API_BASE_URL}?path=events/${eventId}/tasks`, taskData);
+    const response = await axios.post(
+      `${API_BASE_URL}?path=events/${eventId}/tasks`,
+      JSON.stringify(taskData),
+      { headers: { 'Content-Type': 'text/plain' } }
+    );
     return response.data;
   }
 
   async updateTask(taskId: string, updates: Partial<EventTask>): Promise<EventTask> {
-    const response = await axios.put(`${API_BASE_URL}?path=events/tasks/${taskId}`, updates);
+    const response = await axios.put(
+      `${API_BASE_URL}?path=events/tasks/${taskId}`,
+      JSON.stringify(updates),
+      { headers: { 'Content-Type': 'text/plain' } }
+    );
     return response.data;
   }
 
