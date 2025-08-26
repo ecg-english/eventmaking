@@ -4,19 +4,9 @@ import { Event, CreateEventData, EventTask, CreateTaskData } from '../types';
 const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbx00y0v63GUnK3Dsq6Qqy2iWvw4XpwNvRuh.../exec';
 
 class ApiService {
-  // GET リクエスト（JSONPフォールバック付き）
+  // GET リクエスト（JSONPのみ）
   async get<T>(path: string): Promise<T> {
-    try {
-      const response = await axios.get(`${API_BASE_URL}?path=${path}`, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('GET request failed, trying JSONP:', error);
-      return this.createJSONPRequest<T>(path);
-    }
+    return this.createJSONPRequest<T>(path);
   }
 
   // POST リクエスト
@@ -27,7 +17,7 @@ class ApiService {
         JSON.stringify(data),
         {
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'text/plain'
           }
         }
       );
@@ -46,7 +36,7 @@ class ApiService {
         JSON.stringify(data),
         {
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'text/plain'
           }
         }
       );
@@ -62,7 +52,7 @@ class ApiService {
     try {
       const response = await axios.delete(`${API_BASE_URL}?path=${path}`, {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'text/plain'
         }
       });
       return response.data;
@@ -72,7 +62,7 @@ class ApiService {
     }
   }
 
-  // JSONPリクエスト（フォールバック用）
+  // JSONPリクエスト
   private createJSONPRequest<T>(path: string): Promise<T> {
     return new Promise((resolve, reject) => {
       const callbackName = 'jsonpCallback_' + Math.random().toString(36).substr(2, 9);
