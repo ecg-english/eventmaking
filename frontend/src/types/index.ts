@@ -6,7 +6,6 @@ export interface Event {
   createdAt: string;
   updatedAt: string;
   status: 'planning' | 'in-progress' | 'completed' | 'cancelled';
-  userId: string;
 }
 
 export interface EventTask {
@@ -34,29 +33,6 @@ export type TaskType =
   | 'story-repost'  // ストーリー再投稿
   | 'execution'     // 実施・反省会
   | 'custom';       // カスタムタスク
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  createdAt: string;
-}
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface RegisterCredentials {
-  email: string;
-  name: string;
-  password: string;
-}
-
-export interface AuthResponse {
-  user: User;
-  token: string;
-}
 
 export interface CreateEventData {
   title: string;
