@@ -10,10 +10,6 @@ import {
 const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbxL3sOEbygjVpiDLtRYJS8NHvNUi74D0X7DV6MiXn1jbBrUnmn1aKzZNnjAIILnMuBC/exec';
 
 class ApiService {
-  constructor() {
-    // 認証なしのシンプルなAPIサービス
-  }
-
   // イベント関連
   async getEvents(): Promise<Event[]> {
     const response = await axios.get(`${API_BASE_URL}?path=events`);
