@@ -121,7 +121,10 @@ export const EventDetail: React.FC = () => {
     }
   };
 
-  const getTaskUrgency = (dueDate: string) => {
+  const getTaskUrgency = (dueDate: string): {
+    type: 'overdue' | 'urgent' | 'upcoming' | 'normal';
+    days: number;
+  } => {
     try {
       // 日付が無効な場合はデフォルト値を返す
       if (!dueDate || dueDate === '') {
