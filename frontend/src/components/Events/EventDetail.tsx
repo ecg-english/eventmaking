@@ -7,24 +7,20 @@ import {
   Button,
   Chip,
   Grid,
-  Card,
-  CardContent,
-  Checkbox,
-  FormControlLabel,
   LinearProgress,
   Alert
 } from '@mui/material';
 import {
   Edit as EditIcon,
   ArrowBack as ArrowBackIcon,
-  Schedule as ScheduleIcon,
-  Warning as WarningIcon
+  Schedule as ScheduleIcon
 } from '@mui/icons-material';
-import { Event, EventTask, STATUS_LABELS, TASK_TYPE_LABELS, PRIORITY_LABELS } from '../../types';
+import { Event, EventTask, STATUS_LABELS } from '../../types';
 import { apiService } from '../../services/api';
 import { useNavigate, useParams } from 'react-router-dom';
 import { format, parseISO, isPast, differenceInDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { TaskCard } from './TaskCard';
 
 export const EventDetail: React.FC = () => {
   const [event, setEvent] = useState<Event | null>(null);
@@ -74,6 +70,26 @@ export const EventDetail: React.FC = () => {
     } catch (error) {
       console.error('Failed to update task:', error);
       alert('タスクの更新に失敗しました');
+    }
+  };
+
+  const handleUpdateNotes = async (taskId: string, notes: string) => {
+    try {
+      const updatedTask = await apiService.updateTask(taskId, { notes });
+      
+      setTasks(tasks.map(task => {
+        if (task.id === taskId) {
+          return {
+            ...task,
+            ...updatedTask,
+            notes: notes
+          };
+        }
+        return task;
+      }));
+    } catch (error) {
+      console.error('Failed to update task notes:', error);
+      alert('メモの更新に失敗しました');
     }
   };
 
@@ -205,12 +221,11 @@ export const EventDetail: React.FC = () => {
           </Box>
 
           <Typography variant="h6" color="primary" gutterBottom>
-            <ScheduleIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
             {format(parseISO(event.eventDate), 'yyyy年MM月dd日 HH:mm', { locale: ja })}
           </Typography>
 
           {event.description && (
-            <Typography variant="body1" sx={{ mt: 2, whiteSpace: 'pre-wrap' }}>
+            <Typography variant="body1" paragraph>
               {event.description}
             </Typography>
           )}
@@ -219,14 +234,16 @@ export const EventDetail: React.FC = () => {
             <Typography variant="h6" gutterBottom>
               進捗状況: {progress}%
             </Typography>
-            <LinearProgress 
-              variant="determinate" 
-              value={progress} 
-              sx={{ height: 8, borderRadius: 4 }}
-            />
-            <Typography variant="body2" color="text.secondary" mt={1}>
-              {tasks.filter(t => t.completed).length} / {tasks.length} タスク完了
-            </Typography>
+            <Box display="flex" alignItems="center" gap={2}>
+              <LinearProgress 
+                variant="determinate" 
+                value={progress} 
+                sx={{ flexGrow: 1, height: 8, borderRadius: 4 }}
+              />
+              <Typography variant="body2" color="text.secondary">
+                {tasks.filter(task => task.completed).length} / {tasks.length} タスク完了
+              </Typography>
+            </Box>
           </Box>
         </Paper>
 
@@ -236,6 +253,7 @@ export const EventDetail: React.FC = () => {
 
         {tasks.length === 0 ? (
           <Paper sx={{ p: 4, textAlign: 'center' }}>
+            <ScheduleIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
             <Typography variant="body1" color="text.secondary">
               タスクがありません
             </Typography>
@@ -257,111 +275,13 @@ export const EventDetail: React.FC = () => {
                 const urgency = getTaskUrgency(task.dueDate);
                 return (
                   <Grid item xs={12} key={task.id}>
-                    <Card 
-                      sx={{ 
-                        opacity: task.completed ? 0.6 : 1,
-                        border: urgency.type === 'overdue' ? '2px solid #f44336' : 
-                               urgency.type === 'urgent' ? '2px solid #ff9800' : 'none',
-                        backgroundColor: task.completed ? '#f5f5f5' : 'white',
-                        transition: 'all 0.3s ease'
-                      }}
-                    >
-                      <CardContent>
-                        <Box display="flex" alignItems="flex-start" gap={2}>
-                          <FormControlLabel
-                            control={
-                              <Checkbox
-                                checked={task.completed}
-                                onChange={(e) => handleTaskToggle(task.id, e.target.checked)}
-                                color="primary"
-                              />
-                            }
-                            label=""
-                            sx={{ m: 0 }}
-                          />
-                          
-                          <Box flex={1}>
-                            <Box display="flex" alignItems="center" gap={1} mb={1}>
-                              <Typography 
-                                variant="h6" 
-                                sx={{ 
-                                  textDecoration: task.completed ? 'line-through' : 'none',
-                                  flex: 1,
-                                  color: task.completed ? 'text.secondary' : 'text.primary',
-                                  fontWeight: task.completed ? 'normal' : 'medium'
-                                }}
-                              >
-                                {task.title}
-                              </Typography>
-                              
-                              <Chip
-                                label={TASK_TYPE_LABELS[task.taskType]}
-                                size="small"
-                                variant="outlined"
-                                sx={{ 
-                                  opacity: task.completed ? 0.7 : 1,
-                                  backgroundColor: task.completed ? 'rgba(0,0,0,0.04)' : 'transparent'
-                                }}
-                              />
-                              
-                              <Chip
-                                label={PRIORITY_LABELS[task.priority]}
-                                size="small"
-                                color={getPriorityColor(task.priority)}
-                                sx={{ 
-                                  opacity: task.completed ? 0.7 : 1,
-                                  backgroundColor: task.completed ? 'rgba(0,0,0,0.04)' : undefined
-                                }}
-                              />
-                            </Box>
-                            
-                            {task.description && (
-                              <Typography 
-                                variant="body2" 
-                                color="text.secondary" 
-                                paragraph
-                                sx={{
-                                  textDecoration: task.completed ? 'line-through' : 'none',
-                                  opacity: task.completed ? 0.7 : 1
-                                }}
-                              >
-                                {task.description}
-                              </Typography>
-                            )}
-                            
-                            <Box display="flex" alignItems="center" gap={1}>
-                              {urgency.type === 'overdue' && !task.completed && (
-                                <WarningIcon color="error" fontSize="small" />
-                              )}
-                              {urgency.type === 'urgent' && !task.completed && (
-                                <WarningIcon color="warning" fontSize="small" />
-                              )}
-                              
-                              <Typography 
-                                variant="body2" 
-                                color={
-                                  task.completed ? 'text.secondary' :
-                                  urgency.type === 'overdue' ? 'error' :
-                                  urgency.type === 'urgent' ? 'warning.main' :
-                                  'text.secondary'
-                                }
-                                sx={{
-                                  textDecoration: task.completed ? 'line-through' : 'none',
-                                  opacity: task.completed ? 0.7 : 1
-                                }}
-                              >
-                                期限: {task.dueDate ? format(parseISO(task.dueDate), 'MM月dd日 HH:mm', { locale: ja }) : '未設定'}
-                                {!task.completed && urgency.type === 'overdue' && ` (${urgency.days}日過ぎています)`}
-                                {!task.completed && urgency.type === 'urgent' && urgency.days === 0 && ' (今日が期限)'} 
-                                {!task.completed && urgency.type === 'urgent' && urgency.days === 1 && ' (明日が期限)'}
-                                {!task.completed && urgency.type === 'upcoming' && ` (あと${urgency.days}日)`}
-                                {task.completed && ' (完了)'}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-                      </CardContent>
-                    </Card>
+                    <TaskCard
+                      task={task}
+                      urgency={urgency}
+                      onToggle={handleTaskToggle}
+                      onUpdateNotes={handleUpdateNotes}
+                      getPriorityColor={getPriorityColor}
+                    />
                   </Grid>
                 );
               })}

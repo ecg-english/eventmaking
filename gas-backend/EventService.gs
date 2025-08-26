@@ -141,7 +141,7 @@ class EventService {
     const defaultTasks = [
       {
         title: '企画書作成',
-        description: 'イベントの企画書を作成する',
+        description: 'イベントタイトル、イベント内容、イベント日程と開始時間~終了時間、参加費（ビジター料金とメンバー料金）、開催場所を記入してください。',
         taskType: 'proposal',
         priority: 'high',
         daysBeforeEvent: 30
@@ -150,21 +150,88 @@ class EventService {
         title: 'フライヤー作成',
         description: 'イベントのフライヤーを作成する',
         taskType: 'flyer',
+        priority: 'high',
+        daysBeforeEvent: 30
+      },
+      {
+        title: 'フライヤー印刷と店舗張り出し',
+        description: 'フライヤーを印刷し、店舗に張り出す',
+        taskType: 'print',
         priority: 'medium',
         daysBeforeEvent: 30
       },
       {
-        title: 'SNS投稿',
-        description: 'イベントのSNS投稿を行う',
+        title: 'コミュニティアプリ投稿',
+        description: 'コミュニティアプリにイベント情報を投稿する',
+        taskType: 'community',
+        priority: 'medium',
+        daysBeforeEvent: 30
+      },
+      {
+        title: 'Instagram投稿',
+        description: 'Instagramにイベント告知を投稿する',
         taskType: 'instagram',
         priority: 'medium',
+        daysBeforeEvent: 30
+      },
+      {
+        title: '公式LINE予約投稿',
+        description: '公式LINEでイベント予約受付を開始する',
+        taskType: 'line',
+        priority: 'medium',
+        daysBeforeEvent: 30
+      },
+      {
+        title: 'Meetup投稿',
+        description: 'Meetupにイベント情報を投稿する',
+        taskType: 'meetup',
+        priority: 'medium',
         daysBeforeEvent: 7
+      },
+      {
+        title: 'ストーリー投稿',
+        description: 'SNSストーリーでイベントを告知する',
+        taskType: 'story',
+        priority: 'low',
+        daysBeforeEvent: 7
+      },
+      {
+        title: 'イベント準備物確認・買い出し',
+        description: 'イベントに必要な準備物を確認し、買い出しを行う',
+        taskType: 'preparation',
+        priority: 'high',
+        daysBeforeEvent: 3
+      },
+      {
+        title: 'ストーリー投稿（前日）',
+        description: 'イベント前日にストーリーで再度告知する',
+        taskType: 'story-repost',
+        priority: 'medium',
+        daysBeforeEvent: 1
+      },
+      {
+        title: '予約者へのリマインド',
+        description: 'イベント前日に予約者へリマインドを送信する',
+        taskType: 'reminder',
+        priority: 'high',
+        daysBeforeEvent: 1
+      },
+      {
+        title: 'イベント実施・反省会',
+        description: 'イベント実施と終了後の反省会を行う',
+        taskType: 'execution',
+        priority: 'high',
+        daysBeforeEvent: 0
       }
     ];
 
+    // イベントの日付を取得
+    const event = this.db.getEventById(eventId);
+    const eventDate = new Date(event.eventDate);
+
     defaultTasks.forEach(taskTemplate => {
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + taskTemplate.daysBeforeEvent);
+      const dueDate = new Date(eventDate);
+      dueDate.setDate(dueDate.getDate() - taskTemplate.daysBeforeEvent);
       
       this.createTask(eventId, {
         title: taskTemplate.title,

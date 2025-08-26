@@ -19,18 +19,21 @@ export interface EventTask {
   createdAt: string;
   updatedAt: string;
   priority: 'low' | 'medium' | 'high';
+  notes?: string; // メモ機能用
 }
 
 export type TaskType = 
   | 'proposal'      // 企画書作成
   | 'flyer'         // フライヤー作成
+  | 'print'         // フライヤー印刷・店舗張り出し
   | 'community'     // コミュニティアプリ投稿
   | 'instagram'     // Instagram投稿
   | 'line'          // 公式LINE予約投稿
-  | 'print'         // フライヤー印刷・店舗張り出し
   | 'meetup'        // Meetup投稿
   | 'story'         // ストーリー投稿
-  | 'story-repost'  // ストーリー再投稿
+  | 'preparation'   // イベント準備物確認・買い出し
+  | 'story-repost'  // ストーリー再投稿（前日）
+  | 'reminder'      // 予約者へのリマインド
   | 'execution'     // 実施・反省会
   | 'custom';       // カスタムタスク
 
@@ -46,19 +49,22 @@ export interface CreateTaskData {
   dueDate: string;
   taskType: TaskType;
   priority: 'low' | 'medium' | 'high';
+  notes?: string;
 }
 
 export const TASK_TYPE_LABELS: Record<TaskType, string> = {
   proposal: '企画書作成',
   flyer: 'フライヤー作成',
+  print: 'フライヤー印刷・店舗張り出し',
   community: 'コミュニティアプリ投稿',
   instagram: 'Instagram投稿',
   line: '公式LINE予約投稿',
-  print: 'フライヤー印刷・店舗張り出し',
   meetup: 'Meetup投稿',
   story: 'ストーリー投稿',
-  'story-repost': 'ストーリー再投稿',
-  execution: '実施・反省会',
+  preparation: 'イベント準備物確認・買い出し',
+  'story-repost': 'ストーリー投稿（前日）',
+  reminder: '予約者へのリマインド',
+  execution: 'イベント実施・反省会',
   custom: 'カスタムタスク'
 };
 
