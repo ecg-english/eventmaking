@@ -35,7 +35,7 @@ export const EventList: React.FC = () => {
 
   const loadEvents = async () => {
     try {
-      const eventList = await apiService.getEvents();
+      const eventList = await apiService.getAllEvents();
       setEvents(eventList);
     } catch (error) {
       console.error('Failed to load events:', error);
