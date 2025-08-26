@@ -97,17 +97,33 @@ export const EventDetail: React.FC = () => {
   };
 
   const getTaskUrgency = (dueDate: string) => {
-    const due = parseISO(dueDate);
-    const daysUntilDue = differenceInDays(due, new Date());
-    
-    if (isPast(due)) {
-      return { type: 'overdue', days: Math.abs(daysUntilDue) };
-    } else if (daysUntilDue <= 1) {
-      return { type: 'urgent', days: daysUntilDue };
-    } else if (daysUntilDue <= 7) {
-      return { type: 'upcoming', days: daysUntilDue };
+    try {
+      // 日付が無効な場合はデフォルト値を返す
+      if (!dueDate || dueDate === '') {
+        return { type: 'normal', days: 0 };
+      }
+      
+      const due = parseISO(dueDate);
+      
+      // 無効な日付の場合はデフォルト値を返す
+      if (isNaN(due.getTime())) {
+        return { type: 'normal', days: 0 };
+      }
+      
+      const daysUntilDue = differenceInDays(due, new Date());
+      
+      if (isPast(due)) {
+        return { type: 'overdue', days: Math.abs(daysUntilDue) };
+      } else if (daysUntilDue <= 1) {
+        return { type: 'urgent', days: daysUntilDue };
+      } else if (daysUntilDue <= 7) {
+        return { type: 'upcoming', days: daysUntilDue };
+      }
+      return { type: 'normal', days: daysUntilDue };
+    } catch (error) {
+      console.error('Error parsing due date:', dueDate, error);
+      return { type: 'normal', days: 0 };
     }
-    return { type: 'normal', days: daysUntilDue };
   };
 
   const calculateProgress = () => {
@@ -218,7 +234,16 @@ export const EventDetail: React.FC = () => {
         ) : (
           <Grid container spacing={2}>
             {tasks
-              .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+              .sort((a, b) => {
+                try {
+                  const dateA = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+                  const dateB = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+                  return dateA - dateB;
+                } catch (error) {
+                  console.error('Error sorting tasks by date:', error);
+                  return 0;
+                }
+              })
               .map((task) => {
                 const urgency = getTaskUrgency(task.dueDate);
                 return (
@@ -291,7 +316,7 @@ export const EventDetail: React.FC = () => {
                                   'text.secondary'
                                 }
                               >
-                                期限: {format(parseISO(task.dueDate), 'MM月dd日 HH:mm', { locale: ja })}
+                                期限: {task.dueDate ? format(parseISO(task.dueDate), 'MM月dd日 HH:mm', { locale: ja }) : '未設定'}
                                 {urgency.type === 'overdue' && ` (${urgency.days}日過ぎています)`}
                                 {urgency.type === 'urgent' && urgency.days === 0 && ' (今日が期限)'} 
                                 {urgency.type === 'urgent' && urgency.days === 1 && ' (明日が期限)'}
