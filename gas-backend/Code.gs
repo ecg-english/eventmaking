@@ -38,12 +38,6 @@ function doDelete(e) {
  */
 function handleRequest(e, method) {
   try {
-    // OPTIONSリクエスト（プリフライト）の処理
-    if (method === 'OPTIONS') {
-      return ContentService.createTextOutput('')
-        .setMimeType(ContentService.MimeType.TEXT);
-    }
-
     const path = e.parameter.path || '';
     const pathParts = path.split('/').filter(part => part !== '');
 
