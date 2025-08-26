@@ -40,6 +40,7 @@ function handleRequest(e, method) {
   try {
     const path = e.parameter.path || '';
     const pathParts = path.split('/').filter(part => part !== '');
+    const callback = e.parameter.callback;
 
     let response;
 
@@ -59,15 +60,29 @@ function handleRequest(e, method) {
       };
     }
 
+    // JSONPコールバックがある場合はJSONP形式で返す
+    if (callback) {
+      return ContentService.createTextOutput(`${callback}(${JSON.stringify(response)})`)
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+
     return ContentService.createTextOutput(JSON.stringify(response))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (error) {
     console.error('Error handling request:', error);
-    return ContentService.createTextOutput(JSON.stringify({ 
+    const errorResponse = { 
       error: 'サーバー内部エラーが発生しました',
       details: error.toString()
-    }))
+    };
+    
+    const callback = e.parameter.callback;
+    if (callback) {
+      return ContentService.createTextOutput(`${callback}(${JSON.stringify(errorResponse)})`)
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify(errorResponse))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
