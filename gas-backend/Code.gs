@@ -6,133 +6,156 @@ const JWT_SECRET = PropertiesService.getScriptProperties().getProperty('JWT_SECR
 const CORS_ORIGIN = PropertiesService.getScriptProperties().getProperty('CORS_ORIGIN') || 'https://ecg-english.github.io';
 
 /**
- * GET リクエストのハンドラー
+ * Google Apps Script メインエントリーポイント
  */
+
 function doGet(e) {
   return handleRequest(e, 'GET');
 }
 
-/**
- * POST リクエストのハンドラー
- */
 function doPost(e) {
   return handleRequest(e, 'POST');
 }
 
-/**
- * PUT リクエストのハンドラー
- */
 function doPut(e) {
   return handleRequest(e, 'PUT');
 }
 
-/**
- * DELETE リクエストのハンドラー
- */
 function doDelete(e) {
   return handleRequest(e, 'DELETE');
 }
 
-/**
- * リクエストのメインハンドラー
- */
+function doOptions(e) {
+  return handleRequest(e, 'OPTIONS');
+}
+
 function handleRequest(e, method) {
   try {
-    const path = e.parameter.path || '';
-    const pathParts = path.split('/').filter(part => part !== '');
-    const callback = e.parameter.callback;
+    console.log(`Request method: ${method}`);
+    
+    // CORSヘッダーを設定
+    const headers = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Max-Age': '86400'
+    };
 
-    let response;
+    // OPTIONSリクエスト（プリフライト）の処理
+    if (method === 'OPTIONS') {
+      const response = ContentService.createTextOutput('');
+      response.setMimeType(ContentService.MimeType.TEXT);
+      
+      // ヘッダーを設定
+      Object.keys(headers).forEach(key => {
+        response.addHeader(key, headers[key]);
+      });
+      
+      return response;
+    }
+
+    // パスパラメータを取得
+    const path = e.parameter.path || '';
+    console.log(`Request path: ${path}`);
+
+    let result;
+    const eventService = new EventService();
 
     // ルーティング
-    if (path === 'health') {
-      response = { status: 'OK', timestamp: new Date().toISOString() };
-    } else if (pathParts[0] === 'events') {
-      response = handleEventRequest(pathParts, method, e);
-    } else {
-      response = { 
-        message: 'イベント管理システム API',
-        version: '1.0.0',
-        endpoints: {
-          events: '/events',
-          health: '/health'
+    if (path.startsWith('events')) {
+      if (method === 'GET') {
+        if (path === 'events') {
+          result = eventService.getAllEvents();
+        } else if (path.match(/^events\/(.+)$/)) {
+          const eventId = path.split('/')[1];
+          result = eventService.getEventById(eventId);
+        } else if (path.match(/^events\/(.+)\/tasks$/)) {
+          const eventId = path.split('/')[1];
+          result = eventService.getEventTasks(eventId);
         }
-      };
+      } else if (method === 'POST' && path === 'events') {
+        const data = JSON.parse(e.postData.contents);
+        result = eventService.createEvent(data.title, data.description, data.eventDate);
+      } else if (method === 'PUT' && path.match(/^events\/(.+)$/)) {
+        const eventId = path.split('/')[1];
+        const data = JSON.parse(e.postData.contents);
+        result = eventService.updateEvent(eventId, data);
+      } else if (method === 'DELETE' && path.match(/^events\/(.+)$/)) {
+        const eventId = path.split('/')[1];
+        result = eventService.deleteEvent(eventId);
+      } else if (method === 'POST' && path.match(/^events\/(.+)\/tasks$/)) {
+        const eventId = path.split('/')[1];
+        const data = JSON.parse(e.postData.contents);
+        result = eventService.createTask(eventId, data);
+      } else if (method === 'PUT' && path.match(/^events\/tasks\/(.+)$/)) {
+        const taskId = path.split('/')[2];
+        const data = JSON.parse(e.postData.contents);
+        result = eventService.updateTask(taskId, data);
+      } else if (method === 'DELETE' && path.match(/^events\/tasks\/(.+)$/)) {
+        const taskId = path.split('/')[2];
+        result = eventService.deleteTask(taskId);
+      }
+    } else if (path === 'health') {
+      result = { status: 'ok', timestamp: new Date().toISOString() };
     }
 
-    // JSONPコールバックがある場合はJSONP形式で返す
-    if (callback) {
-      return ContentService.createTextOutput(`${callback}(${JSON.stringify(response)})`)
-        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    if (!result) {
+      throw new Error(`Invalid path: ${path}`);
     }
 
-    return ContentService.createTextOutput(JSON.stringify(response))
-      .setMimeType(ContentService.MimeType.JSON);
+    // JSONP対応
+    const callback = e.parameter.callback;
+    let response;
+    
+    if (callback && method === 'GET') {
+      response = ContentService.createTextOutput(`${callback}(${JSON.stringify(result)})`);
+      response.setMimeType(ContentService.MimeType.JAVASCRIPT);
+    } else {
+      response = ContentService.createTextOutput(JSON.stringify(result));
+      response.setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // CORSヘッダーを設定
+    Object.keys(headers).forEach(key => {
+      response.addHeader(key, headers[key]);
+    });
+
+    return response;
 
   } catch (error) {
     console.error('Error handling request:', error);
-    const errorResponse = { 
-      error: 'サーバー内部エラーが発生しました',
-      details: error.toString()
+    
+    const errorResponse = {
+      error: error.message,
+      timestamp: new Date().toISOString()
     };
+
+    const response = ContentService.createTextOutput(JSON.stringify(errorResponse));
+    response.setMimeType(ContentService.MimeType.JSON);
     
-    const callback = e.parameter.callback;
-    if (callback) {
-      return ContentService.createTextOutput(`${callback}(${JSON.stringify(errorResponse)})`)
-        .setMimeType(ContentService.MimeType.JAVASCRIPT);
-    }
+    // エラー時もCORSヘッダーを設定
+    response.addHeader('Access-Control-Allow-Origin', '*');
+    response.addHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.addHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     
-    return ContentService.createTextOutput(JSON.stringify(errorResponse))
-      .setMimeType(ContentService.MimeType.JSON);
+    return response;
   }
 }
 
-/**
- * イベント関連のリクエストを処理
- */
-function handleEventRequest(pathParts, method, e) {
-  const eventService = new EventService();
-  
-  if (method === 'GET' && pathParts.length === 1) {
-    return eventService.getAllEvents();
-  } else if (method === 'GET' && pathParts.length === 2) {
-    return eventService.getEventById(pathParts[1]);
-  } else if (method === 'POST' && pathParts.length === 1) {
-    const data = JSON.parse(e.postData.contents);
-    return eventService.createEvent(data.title, data.description, data.eventDate);
-  } else if (method === 'PUT' && pathParts.length === 2) {
-    const data = JSON.parse(e.postData.contents);
-    return eventService.updateEvent(pathParts[1], data);
-  } else if (method === 'DELETE' && pathParts.length === 2) {
-    return eventService.deleteEvent(pathParts[1]);
-  } else if (method === 'GET' && pathParts.length === 3 && pathParts[2] === 'tasks') {
-    return eventService.getEventTasks(pathParts[1]);
-  } else if (method === 'POST' && pathParts.length === 3 && pathParts[2] === 'tasks') {
-    const data = JSON.parse(e.postData.contents);
-    return eventService.createTask(pathParts[1], data);
-  } else if (method === 'PUT' && pathParts.length === 3 && pathParts[1] === 'tasks') {
-    const data = JSON.parse(e.postData.contents);
-    return eventService.updateTask(pathParts[2], data);
-  } else if (method === 'DELETE' && pathParts.length === 3 && pathParts[1] === 'tasks') {
-    return eventService.deleteTask(pathParts[2]);
-  }
-  
-  throw new Error('イベントエンドポイントが見つかりません');
-}
-
-/**
- * テスト用関数
- */
+// テスト用関数
 function testAPI() {
   console.log('GAS API テスト開始');
   
-  // ヘルスチェック
-  const healthResponse = doGet({ parameter: { path: 'health' } });
-  console.log('Health check:', healthResponse.getContent());
+  const testEvent = {
+    parameter: {
+      path: 'health'
+    }
+  };
   
-  // イベント一覧取得テスト
-  const eventsResponse = doGet({ parameter: { path: 'events' } });
-  console.log('Events list:', eventsResponse.getContent());
-  
-  console.log('GAS API テスト完了');
+  try {
+    const result = handleRequest(testEvent, 'GET');
+    console.log('テスト結果:', result.getContent());
+  } catch (error) {
+    console.error('テストエラー:', error);
+  }
 } 

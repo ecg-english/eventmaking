@@ -1,156 +1,133 @@
 import axios from 'axios';
-import { 
-  Event, 
-  EventTask, 
-  CreateEventData,
-  CreateTaskData 
-} from '../types';
+import { Event, CreateEventData, EventTask, CreateTaskData } from '../types';
 
-// GASのデプロイURL - 新しいデプロイURLに更新してください
-const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbx00y0v63GUnK3Dsq6Qqy2iWvw4XpwNvRuhu8nxvzE2Ll0cQOH4afSJ0BkRUBNIK0Ug/exec';
-
-// CORSエラーを回避するため、JSONPアプローチを使用
-const createJSONPRequest = (url: string): Promise<any> => {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    const callbackName = 'jsonpCallback_' + Math.random().toString(36).substr(2, 9);
-    
-    (window as any)[callbackName] = (data: any) => {
-      resolve(data);
-      document.head.removeChild(script);
-      delete (window as any)[callbackName];
-    };
-    
-    script.src = `${url}&callback=${callbackName}`;
-    script.onerror = () => {
-      reject(new Error('JSONP request failed'));
-      document.head.removeChild(script);
-      delete (window as any)[callbackName];
-    };
-    
-    document.head.appendChild(script);
-  });
-};
-
-// POST/PUT/DELETEリクエスト用のJSONPフォールバック
-const createJSONPPostRequest = (url: string, data: any): Promise<any> => {
-  return new Promise((resolve, reject) => {
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = url;
-    form.target = 'jsonp_iframe_' + Math.random().toString(36).substr(2, 9);
-    
-    // データをフォームに追加
-    Object.keys(data).forEach(key => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = key;
-      input.value = typeof data[key] === 'object' ? JSON.stringify(data[key]) : data[key];
-      form.appendChild(input);
-    });
-    
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
-    
-    // 簡易的なレスポンス処理（実際の実装ではより複雑）
-    setTimeout(() => {
-      resolve({ success: true });
-    }, 1000);
-  });
-};
+const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbx00y0v63GUnK3Dsq6Qqy2iWvw4XpwNvRuh.../exec';
 
 class ApiService {
-  // イベント関連
-  async getEvents(): Promise<Event[]> {
+  // GET リクエスト（JSONPフォールバック付き）
+  async get<T>(path: string): Promise<T> {
     try {
-      return await createJSONPRequest(`${API_BASE_URL}?path=events`);
+      const response = await axios.get(`${API_BASE_URL}?path=${path}`, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      return response.data;
     } catch (error) {
-      console.error('JSONP request failed:', error);
+      console.error('GET request failed, trying JSONP:', error);
+      return this.createJSONPRequest<T>(path);
+    }
+  }
+
+  // POST リクエスト
+  async post<T>(path: string, data: any): Promise<T> {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}?path=${path}`,
+        JSON.stringify(data),
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('POST request failed:', error);
       throw error;
     }
+  }
+
+  // PUT リクエスト
+  async put<T>(path: string, data: any): Promise<T> {
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}?path=${path}`,
+        JSON.stringify(data),
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('PUT request failed:', error);
+      throw error;
+    }
+  }
+
+  // DELETE リクエスト
+  async delete<T>(path: string): Promise<T> {
+    try {
+      const response = await axios.delete(`${API_BASE_URL}?path=${path}`, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('DELETE request failed:', error);
+      throw error;
+    }
+  }
+
+  // JSONPリクエスト（フォールバック用）
+  private createJSONPRequest<T>(path: string): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const callbackName = 'jsonpCallback_' + Math.random().toString(36).substr(2, 9);
+      const script = document.createElement('script');
+      
+      (window as any)[callbackName] = (data: T) => {
+        resolve(data);
+        document.head.removeChild(script);
+        delete (window as any)[callbackName];
+      };
+
+      script.src = `${API_BASE_URL}?path=${path}&callback=${callbackName}`;
+      script.onerror = () => {
+        reject(new Error('JSONP request failed'));
+        document.head.removeChild(script);
+        delete (window as any)[callbackName];
+      };
+
+      document.head.appendChild(script);
+    });
+  }
+
+  // イベント関連のAPI
+  async getAllEvents(): Promise<Event[]> {
+    return this.get<Event[]>('events');
   }
 
   async getEvent(id: string): Promise<Event> {
-    try {
-      return await createJSONPRequest(`${API_BASE_URL}?path=events/${id}`);
-    } catch (error) {
-      console.error('JSONP request failed:', error);
-      throw error;
-    }
+    return this.get<Event>(`events/${id}`);
   }
 
   async createEvent(eventData: CreateEventData): Promise<Event> {
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}?path=events`,
-        JSON.stringify(eventData),
-        { headers: { 'Content-Type': 'text/plain' } }
-      );
-      return response.data;
-    } catch (error) {
-      console.error('POST request failed, trying JSONP:', error);
-      return createJSONPPostRequest(`${API_BASE_URL}?path=events`, eventData);
-    }
+    return this.post<Event>('events', eventData);
   }
 
-  async updateEvent(id: string, updates: Partial<Event>): Promise<Event> {
-    try {
-      const response = await axios.put(
-        `${API_BASE_URL}?path=events/${id}`,
-        JSON.stringify(updates),
-        { headers: { 'Content-Type': 'text/plain' } }
-      );
-      return response.data;
-    } catch (error) {
-      console.error('PUT request failed, trying JSONP:', error);
-      return createJSONPPostRequest(`${API_BASE_URL}?path=events/${id}`, updates);
-    }
+  async updateEvent(id: string, eventData: Partial<Event>): Promise<Event> {
+    return this.put<Event>(`events/${id}`, eventData);
   }
 
-  async deleteEvent(id: string): Promise<void> {
-    try {
-      await axios.delete(`${API_BASE_URL}?path=events/${id}`, {
-        headers: { 'Content-Type': 'text/plain' }
-      });
-    } catch (error) {
-      console.error('DELETE request failed, trying JSONP:', error);
-      await createJSONPPostRequest(`${API_BASE_URL}?path=events/${id}`, { action: 'delete' });
-    }
+  async deleteEvent(id: string): Promise<{ message: string }> {
+    return this.delete<{ message: string }>(`events/${id}`);
   }
 
-  // タスク関連
+  // タスク関連のAPI
   async getEventTasks(eventId: string): Promise<EventTask[]> {
-    try {
-      return await createJSONPRequest(`${API_BASE_URL}?path=events/${eventId}/tasks`);
-    } catch (error) {
-      console.error('JSONP request failed:', error);
-      throw error;
-    }
+    return this.get<EventTask[]>(`events/${eventId}/tasks`);
   }
 
   async createTask(eventId: string, taskData: CreateTaskData): Promise<EventTask> {
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}?path=events/${eventId}/tasks`,
-        JSON.stringify(taskData),
-        { headers: { 'Content-Type': 'text/plain' } }
-      );
-      return response.data;
-    } catch (error) {
-      console.error('POST request failed, trying JSONP:', error);
-      return createJSONPPostRequest(`${API_BASE_URL}?path=events/${eventId}/tasks`, taskData);
-    }
+    return this.post<EventTask>(`events/${eventId}/tasks`, taskData);
   }
 
   async updateTask(taskId: string, updates: Partial<EventTask>): Promise<EventTask> {
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}?path=events/tasks/${taskId}`,
-        JSON.stringify(updates),
-        { headers: { 'Content-Type': 'text/plain' } }
-      );
-      return response.data;
+      return await this.put<EventTask>(`events/tasks/${taskId}`, updates);
     } catch (error) {
       console.error('PUT request failed, trying JSONP:', error);
       // エラーが発生した場合は、更新された情報のみを含むレスポンスを返す
@@ -164,25 +141,13 @@ class ApiService {
     }
   }
 
-  async deleteTask(taskId: string): Promise<void> {
-    try {
-      await axios.delete(`${API_BASE_URL}?path=events/tasks/${taskId}`, {
-        headers: { 'Content-Type': 'text/plain' }
-      });
-    } catch (error) {
-      console.error('DELETE request failed, trying JSONP:', error);
-      await createJSONPPostRequest(`${API_BASE_URL}?path=events/tasks/${taskId}`, { action: 'delete' });
-    }
+  async deleteTask(taskId: string): Promise<{ message: string }> {
+    return this.delete<{ message: string }>(`events/tasks/${taskId}`);
   }
 
   // ヘルスチェック
   async healthCheck(): Promise<{ status: string; timestamp: string }> {
-    try {
-      return await createJSONPRequest(`${API_BASE_URL}?path=health`);
-    } catch (error) {
-      console.error('JSONP request failed:', error);
-      throw error;
-    }
+    return this.get<{ status: string; timestamp: string }>('health');
   }
 }
 
